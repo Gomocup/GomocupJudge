@@ -22,6 +22,15 @@ class client(object):
             if fname.lower().endswith(".zip") or fname.lower().endswith(".exe"):
                 self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
         self.is_os_64bit = platform.machine().endswith('64')
+        if not os.path.isdir(self.engine_dir):
+            os.mkdir(self.engine_dir)
+        if not os.path.isdir(self.match_dir):
+            os.mkdir(self.match_dir)
+        if not os.path.isdir(self.folder_dir):
+            os.mkdir(self.folder_dir)
+        self.settings = {}
+        self.settings["real_time_pos"] = 0
+        self.settings["real_time_message"] = 0
         self.display_info()
 
     def display_info(self):
@@ -135,8 +144,9 @@ class client(object):
                         
                 cmd_1, protocol_1 = get_cmd_protocol(md5_1)
                 cmd_2, protocol_2 = get_cmd_protocol(md5_2)
-                #print cmd_1, protocol_1
-                #print cmd_2, protocol_2
+
+                print cmd_1, protocol_1
+                print cmd_2, protocol_2
 
                 game = ai_match(board_size = board_size,
                                 opening = self.str_to_pos(opening),
@@ -158,7 +168,9 @@ class client(object):
                                 working_dir_2 = os.path.join(self.match_dir, md5_2),
                                 tolerance = tolerance)
                 msg, pos, ret = game.play()
-                #print msg, pos, ret
+
+                print msg, pos, ret
+                
                 self.client_socket.send("match finished " + self.pos_to_str(pos) + " " + msg.encode("base64"))
                 
             elif buf.lower().startswith("quit"):

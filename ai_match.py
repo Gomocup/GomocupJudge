@@ -75,6 +75,7 @@ class ai_match(object):
                                           self.working_dir_1,
                                           self.tolerance)
             msg, x, y = self.engine_1.start()
+            t = self.engine_1.timeused
         elif self.move_num == 1:
             self.engine_2 = self.init_protocol(self.cmd_2,
                                           self.protocol_2,
@@ -88,17 +89,20 @@ class ai_match(object):
                                           self.working_dir_2,
                                           self.tolerance)
             msg, x, y = self.engine_2.start()
+            t = self.engine_2.timeused
         else:
             if self.move_num % 2 == 0:
                 msg, x, y = self.engine_1.turn(self.last_move[0], self.last_move[1])
+                t = self.engine_1.timeused
             else:
                 msg, x, y = self.engine_2.turn(self.last_move[0], self.last_move[1])
+                t = self.engine_2.timeused
 
         self.move_num += 1
         self.board_1[x][y] = (len(self.opening)+self.move_num, (self.move_num + 1) % 2 + 1)
         self.board_2[x][y] = (len(self.opening)+self.move_num, (self.move_num + 0) % 2 + 1)
         self.last_move = (x,y)
-        return msg, x, y
+        return msg, x, y, t
 
     #return
     # -3: crash
@@ -145,8 +149,8 @@ class ai_match(object):
             if self.rule == 4 and i >= self.board_size**2 - 25:
                 break
             try:
-                _msg, x, y = self.next_move()
-                msg += '('+str(i+1)+') ' + _msg + '\n'
+                _msg, x, y, t = self.next_move()
+                msg += '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
                 pos += [(x,y)]
                 ret = self.make_move(x, y, i%2+1)
             except:
@@ -215,7 +219,7 @@ def main():
 
     '''
     for i in xrange(20):
-        msg, x, y = test.next_move()
+        msg, x, y, t = test.next_move()
         print '['+str(i)+']', x, y
         print msg
         test.print_board()

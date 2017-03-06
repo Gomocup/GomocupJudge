@@ -24,11 +24,11 @@ def main():
         elif x == 'newmatch':
             c.send("match new c3f044fafd550e01c97cf599f0cd7c31 e7d8817a65c86b9c4b6b675dd021269e "+
                    "1000 100000 0 1000 j10 20 350000000 1")
-            c.recv(64)
+            c.recv(16*1024*1024)
             pass
         else:
             c.send(x)
-        buf = c.recv(64)
+        buf = c.recv(16*1024*1024)
         if len(buf) > 0:
             print addr, buf
 
