@@ -1,6 +1,3 @@
-#TODO
-#* cpu affinity
-
 import socket
 import hashlib
 import os

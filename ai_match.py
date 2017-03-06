@@ -1,6 +1,3 @@
-#TODO
-#* Check forbidden moves (foul) for Renju
-
 from old_protocol import old_protocol
 from new_protocol import new_protocol
 

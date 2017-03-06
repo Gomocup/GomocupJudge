@@ -1,8 +1,3 @@
-# TODO
-# * Check max_memory
-# * Check max folder size
-# * Check pondering
-
 import subprocess, shlex
 import copy
 import time
