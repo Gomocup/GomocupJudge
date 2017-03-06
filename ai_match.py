@@ -1,7 +1,10 @@
+#TODO
+#* Check forbidden moves (foul) for Renju
+
 from old_protocol import old_protocol
 from new_protocol import new_protocol
 
-class match(object):
+class ai_match(object):
     def __init__(self,
                  board_size,
                  opening,
@@ -41,6 +44,11 @@ class match(object):
         self.working_dir_1 = working_dir_1
         self.working_dir_2 = working_dir_2
         self.tolerance = tolerance
+        
+        self.board = [[0 for i in xrange(self.board_size)] for j in xrange(self.board_size)]
+        for i in xrange(len(self.opening)):
+            x, y = self.opening[i]
+            self.board[x][y] = i % 2 + 1
 
         self.move_num = 0
         self.last_move = (-1, -1)
@@ -57,6 +65,7 @@ class match(object):
                 else:
                     self.board_1[x][y] = (i+1, 2)
                     self.board_2[y][y] = (i+1, 1)
+                
             self.engine_1 = self.init_protocol(self.cmd_1,
                                           self.protocol_1,
                                           self.board_1,
@@ -93,7 +102,64 @@ class match(object):
         self.board_2[x][y] = (len(self.opening)+self.move_num, (self.move_num + 0) % 2 + 1)
         self.last_move = (x,y)
         return msg, x, y
-                 
+
+    #return
+    # -3: crash
+    # -2: foul
+    # -1: illegal
+    #  0: normal
+    #  1: win
+    def make_move(self, x, y, color):
+        if self.board[x][y] != 0:
+            return -1
+        
+        self.board[x][y] = color
+        nx = [0, 1, -1, 1]
+        ny = [1, 0,  1, 1]
+        for d in range(4):
+            c = 1
+            _x, _y = x, y
+            for i in range(1,5):
+                _x += nx[d]
+                _y += ny[d]
+                if _x<0 or _x>=self.board_size: break
+                if _y<0 or _y>=self.board_size: break
+                if self.board[_x][_y] != self.board[x][y]: break
+                c += 1
+            _x, _y = x, y
+            for i in range(1,5):
+                _x -= nx[d]
+                _y -= ny[d]
+                if _x<0 or _x>=self.board_size: break
+                if _y<0 or _y>=self.board_size: break
+                if self.board[_x][_y] != self.board[x][y]: break
+                c += 1
+            if self.rule == 0 and c >= 5:
+                return 1
+            if self.rule == 1 and c == 5:
+                return 1
+        return 0        
+
+    def play(self):
+        msg = ''
+        pos = []
+        ret = 0
+        for i in xrange(len(self.opening), self.board_size**2):
+            if self.rule == 4 and i >= self.board_size**2 - 25:
+                break
+            try:
+                _msg, x, y = self.next_move()
+                msg += '('+str(i+1)+') ' + _msg + '\n'
+                pos += [(x,y)]
+                ret = self.make_move(x, y, i%2+1)
+            except:
+                ret = -3
+            if ret != 0:
+                break
+        self.engine_1.clean()
+        self.engine_2.clean()
+        return msg, pos, ret
+        
     def init_protocol(self,
                       cmd,
                       protocol_type,
@@ -129,7 +195,7 @@ def main():
     #openings
     #[(2,3)]
     #[(1,10)]
-    test = match(
+    test = ai_match(
         board_size = 20,
         opening = [(10,10)],
         cmd_1 = "C:/Kai/git/GomocupJudge/engine/pbrain-yixin15.exe",
@@ -150,11 +216,16 @@ def main():
         working_dir_2 = "C:/Kai/git/GomocupJudge/engine",
         tolerance = 1000)
 
+    '''
     for i in xrange(20):
         msg, x, y = test.next_move()
         print '['+str(i)+']', x, y
         print msg
         test.print_board()
+    '''
+
+    msg, pos, ret = test.play()
+    print msg, pos, ret
         
 if __name__ == '__main__':
     main()
