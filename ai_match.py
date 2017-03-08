@@ -105,6 +105,7 @@ class ai_match(object):
         return msg, x, y, t
 
     #return
+    # -4: timeout
     # -3: crash
     # -2: foul
     # -1: illegal
@@ -144,7 +145,7 @@ class ai_match(object):
     def play(self):
         msg = ''
         pos = []
-        ret = 0
+        status = 0
         for i in xrange(len(self.opening), self.board_size**2):
             if self.rule == 4 and i >= self.board_size**2 - 25:
                 break
@@ -152,14 +153,30 @@ class ai_match(object):
                 _msg, x, y, t = self.next_move()
                 msg += '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
                 pos += [(x,y)]
-                ret = self.make_move(x, y, i%2+1)
+                status = self.make_move(x, y, i%2+1)
             except:
-                ret = -3
-            if ret != 0:
+                status = -3
+            if status != 0:
+                if status == 1:
+                    result = i % 2 + 1
+                    endby = 0 #draw/five
+                else:
+                    result = (i+1) % 2 + 1
+                    if status == -1:
+                        endby = 3 #illegal coordinate
+                    elif status == -2:
+                        endby = 1 #foul
+                    elif status == -3:
+                        endby = 4 #crash
+                    elif status == -4:
+                        endby = 2 #timeout
                 break
         self.engine_1.clean()
         self.engine_2.clean()
-        return msg, pos, ret
+        if status == 0:
+            result = 0 #draw
+            endby = 0 #draw/five
+        return msg, pos, result, endby
         
     def init_protocol(self,
                       cmd,

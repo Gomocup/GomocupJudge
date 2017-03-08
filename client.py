@@ -167,11 +167,11 @@ class client(object):
                                 working_dir_1 = os.path.join(self.match_dir, md5_1),
                                 working_dir_2 = os.path.join(self.match_dir, md5_2),
                                 tolerance = tolerance)
-                msg, pos, ret = game.play()
+                msg, pos, result, endby = game.play()
 
-                print msg, pos, ret
+                print msg, pos, result, endby
                 
-                self.client_socket.send("match finished " + self.pos_to_str(pos) + " " + msg.encode("base64"))
+                self.client_socket.send("match finished " + self.pos_to_str(pos) + " " + msg.encode("base64") + " " + str(result) + " " + str(endby))
                 
             elif buf.lower().startswith("quit"):
                 self.client_socket.send("bye")
