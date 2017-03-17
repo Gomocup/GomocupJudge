@@ -31,6 +31,8 @@ class client(object):
         self.settings = {}
         self.settings["real_time_pos"] = 0
         self.settings["real_time_message"] = 0
+        #self.settings["allow pondering"] = 0
+        #self.settings[""] = 0
         self.display_info()
 
     def display_info(self):
@@ -173,6 +175,21 @@ class client(object):
                 
                 self.client_socket.send("match finished " + self.pos_to_str(pos) + " " + msg.encode("base64") + " " + str(result) + " " + str(endby))
                 
+            elif buf.lower().startswith("set real_time_pos"):
+                self.settings["real_time_pos"] = int(buf.strip().split()[-1])
+                self.client_socket.send("ok")
+            elif buf.lower().startswith("set real_time_message"):
+                self.settings["real_time_message"] = int(buf.strip().split()[-1])
+                self.client_socket.send("ok")
+            elif buf.lower().startswith("pause"):
+                #TODO
+                self.client_socket.send("ok")
+            elif buf.lower().startswith("continue"):
+                #TODO
+                self.client_socket.send("ok")
+            elif buf.lower().startswith("terminate"):
+                #TODO
+                self.client_socket.send("ok")
             elif buf.lower().startswith("quit"):
                 self.client_socket.send("bye")
                 break
