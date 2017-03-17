@@ -1,0 +1,12 @@
+name = freestyle2016
+board = 20
+rule = 0
+opening = openings_20
+engines = YIXIN16.zip TITO14.zip HEWER15.zip SWINE15.zip SLOWRENJU16.zip RENJUSOLVER.F.zip
+tournament = 1
+time_turn = 30
+time_match = 180
+tolerance = 1000
+memory = 350
+real_time_pos = 1
+real_time_message = 1
