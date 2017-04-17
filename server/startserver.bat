@@ -1,1 +1,1 @@
-python server.py freestyle2016 50007
+python server.py example 50007

@@ -9,4 +9,4 @@ time_match = 180
 tolerance = 1000
 memory = 350
 real_time_pos = 1
-real_time_message = 1
+real_time_message = 0

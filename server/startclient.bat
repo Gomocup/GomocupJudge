@@ -1,1 +1,1 @@
-python client.py localhost 50007
+python client_debug.py localhost 50007
