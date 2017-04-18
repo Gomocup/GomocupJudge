@@ -1,0 +1,7 @@
+localpath = 
+searchpattern = 
+host = 
+username =
+password =
+remotepath = 
+timeout = 10000
