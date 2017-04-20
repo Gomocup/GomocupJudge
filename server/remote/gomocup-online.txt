@@ -1,7 +1,4 @@
-localpath = 
-searchpattern = 
-host = 
-username =
-password =
-remotepath = 
-timeout = 10000
+host = xxx.xxx.xxx.xxx:xxxx
+username = xxxxxxxx
+password = xxxxxxxx
+remotepath = App_Data/Tournaments/

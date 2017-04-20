@@ -11,6 +11,7 @@ import base64
 import Queue
 import subprocess
 import random
+import ftplib
 
 def get_md5(curpath, engine):
     engine_path = curpath + slash + 'engine' + slash + engine
@@ -254,6 +255,7 @@ class Tournament:
             fout.write("</TR>\n")
         fout.write("</TBODY>\n</TABLE>\n</BODY>\n</HTML>\n")
         fout.close()
+        ftp_upload(result_path + slash + "_table.html", False)
               
     def assign_match(self, client):
         inv_ratings = {}
@@ -404,10 +406,12 @@ class Client_state:
         fpos = open(pos_path, 'w')
         fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
         fpos.close()
+        ftp_upload(pos_path, False)
         fmessage = open(result_path + slash + 'message.txt', 'a')
         fmessage.write(message)
         fmessage.write('\n--> ' + pos_path + '\n\n')
         fmessage.close()
+        ftp_upload(result_path + slash + 'message.txt', False)
         self.match.result = result
         self.match.end_with = end_with     
         cur_tur = self.tournament
@@ -470,6 +474,7 @@ class Client_state:
         fpos = open(pos_path, 'w')
         fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
         fpos.close()
+        ftp_upload(pos_path, True)
         
     def save_message(self, message):
         message = base64.b64decode(message)
@@ -485,6 +490,7 @@ class Client_state:
         fmessage = open(message_path, 'w')
         fmessage.write(message)
         fmessage.close()
+        ftp_upload(message_path, True)
     
     def process(self, output_queue):
         if self.active:
@@ -606,6 +612,8 @@ def check_end():
                 end_flag = False
         if not output_queue.empty():
             end_flag = False
+        if not ftp_queue.empty():
+            end_flag = False
         if tournament_state.leftmatches > 0:
             end_flag = False
         if end_flag:
@@ -669,6 +677,45 @@ def read_opening(opening_file, board_size):
             openings_list.append(opening2pos(line, board_size))
     fin.close()
     return openings_list
+    
+def ftp_connect():
+    if remote_info:
+        ftp_server = remote_info[0]
+        if ':' in ftp_server:
+            ftp_server, port = remote_info[0].rsplit(':', 1)
+            port = string.atoi(port)
+        else:
+            port = 21
+        username = remote_info[1]
+        password = remote_info[2]
+        ftp = ftplib.FTP()
+        ftp.set_debuglevel(0)
+        ftp.connect(ftp_server, port)
+        ftp.login(username,password)
+        return ftp  
+        
+def ftp_upload(upfile, is_online):
+    if remote_info:
+        ftp_queue.put((upfile, is_online))
+    
+def ftp_upload_process():
+    if remote_info:
+        while True:
+            upfile, is_online = ftp_queue.get()
+            bufsize = 1024
+            file = open(upfile, 'rb')
+            if is_online:
+                r_path = remote_info[3]
+            else:
+                r_path = remote_info[4]
+            if not r_path[-1] == '/':
+                r_path = r_path + '/'
+            ftp.storbinary('STOR ' + r_path + upfile.split(slash)[-1], file, bufsize)
+            ftp.set_debuglevel(0)
+            file.close()
+        
+def ftp_quit():
+    ftp.quit()
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -710,6 +757,24 @@ if __name__ == "__main__":
         real_time_message = True
     else:
         real_time_message = False
+    remote_name = tournament['remote']
+    if remote_name:
+        remote_file = curpath + slash + 'remote' + slash + remote_name + '.txt'
+        remote = read_tournament(remote_file)
+        remote_host = remote['host']
+        remote_username = remote['username']
+        remote_password = remote['password']
+        remote_path = remote['remotepath']
+        if not remote_path[-1] == '/':
+            remote = remote + '/'
+        remote_online_path = remote_path + 'Online/'
+        remote_tur_path = remote_path + tur_name + '/'
+        remote_info = (remote_host, remote_username, remote_password, remote_online_path, remote_tur_path)
+    else:
+        remote_info = None
+    ftp_queue = Queue.Queue()
+    ftp = ftp_connect()
+    print 'Connected.'
     result_dir = curpath + slash + 'result' + slash + tur_name
     if os.path.exists(result_dir):
         if not os.path.isdir(result_dir):
@@ -733,6 +798,8 @@ if __name__ == "__main__":
     toutput.start()
     tend = threading.Thread(target = check_end)
     tend.start()
+    tftp = threading.Thread(target = ftp_upload_process)
+    tftp.start()
 
     while(True):
         cur_input = input_queue.get()

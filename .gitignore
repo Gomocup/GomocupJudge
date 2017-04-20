@@ -90,8 +90,8 @@ ENV/
 
 
 *~
-server/remote/*.txt
-server/tournament/*.txt
+#server/remote/*.txt
+#server/tournament/*.txt
 server/opening/*.txt
 server/engine/*.zip
 server/result
