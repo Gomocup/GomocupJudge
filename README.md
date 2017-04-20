@@ -9,6 +9,7 @@ GomocupJudge is a new manager for Gomocup **under development**.
 
 * The server and clients communicate through socket.  
 * At any time, a client runs at most 1 match.
+* Pondering is not allowed (AI's process is suspended when it is not thinking)
 
 Sample
 
@@ -42,9 +43,10 @@ Sample
     client: ok
     server: terminate
     client: ok
+    server: set check_pondering 1
+    client: ok
 
 * Check max_memory
 * Check max folder size
-* Check pondering
 * Start a new thread for each match instance
 

@@ -1,4 +1,5 @@
 import subprocess, shlex
+import psutil
 import copy
 import time
 import sys
@@ -27,6 +28,8 @@ class new_protocol(object):
         self.tolerance = tolerance
         self.timeused = 0
 
+        self.vms_memory = 0
+
         self.color = 1
         self.piece = {}
         for i in xrange(len(board)):
@@ -39,6 +42,7 @@ class new_protocol(object):
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
                                         cwd=self.working_dir)
+        self.pp = psutil.Process(self.process.pid)
         self.process.stdin.write("START " + str(len(self.board)) + "\n")
         self.process.stdin.write("INFO timeout_turn " + str(self.timeout_turn) + "\n")
         self.process.stdin.write("INFO timeout_match " + str(self.timeout_match) + "\n")
@@ -46,8 +50,20 @@ class new_protocol(object):
         self.process.stdin.write("INFO game_type " + str(self.game_type) + "\n")
         self.process.stdin.write("INFO rule " + str(self.rule) + "\n")
         self.process.stdin.write("INFO folder " + str(self.folder) + "\n")
+        self.suspend()
+
+    def suspend(self):
+        self.pp.suspend()
+
+    def resume(self):
+        self.pp.resume()
+
+    def update_vms(self):
+        self.vms_memory = max(self.vms_memory, self.pp.memory_info()[1])
 
     def wait(self):
+        self.resume()
+        
         msg = ''
         x, y = -1, -1
         timeout_sec = (self.tolerance + min((self.timeout_match - self.timeused), self.timeout_turn)) / 1000.
@@ -70,6 +86,9 @@ class new_protocol(object):
                         pass
         end = time.time()
         self.timeused += (max(0, end-start-0.01))*1000
+
+        self.update_vms()
+        self.suspend()
 
         self.piece[len(self.piece)+1] = (x,y)
         self.board[x][y] = (len(self.piece), self.color)
@@ -94,6 +113,8 @@ class new_protocol(object):
         return self.wait()
 
     def clean(self):
+        self.resume()
+        
         self.process.stdin.write("END\n")
         time.sleep(0.5)
         if self.process.poll() is None:

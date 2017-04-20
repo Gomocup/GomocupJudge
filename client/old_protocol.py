@@ -28,6 +28,8 @@ class old_protocol(object):
         self.tolerance = tolerance
         self.timeused = 0
 
+        self.vms_memory = 0
+        
         self.color = 1
         self.piece = {}
         for i in xrange(len(board)):
@@ -39,6 +41,11 @@ class old_protocol(object):
         timeout_sec = (self.tolerance + min((self.timeout_match - self.timeused), self.timeout_turn)) / 1000.
         start = time.time()
         proc = subprocess.Popen(shlex.split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.working_dir, shell=True)
+        try:
+            pp = psutil.Process(proc.pid)
+            self.vms_memory = max(self.vms_memory, pp.memory_info()[1])
+        except:
+            pass
         kill_proc = lambda p: p.kill()
         timer = Timer(timeout_sec, kill_proc, [proc])
         try:

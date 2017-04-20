@@ -1,3 +1,4 @@
+import sys
 from old_protocol import old_protocol
 from new_protocol import new_protocol
 from check_forbid import check_forbid
@@ -186,6 +187,8 @@ class ai_match(object):
                     elif status == -4:
                         endby = 2 #timeout
                 break
+        print endby
+        sys.stdout.flush()
         self.engine_1.clean()
         self.engine_2.clean()
         if status == 0:
