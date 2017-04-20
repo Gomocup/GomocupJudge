@@ -1,4 +1,0 @@
-host = xxx.xxx.xxx.xxx:xxxx
-username = xxxxxxx
-password = xxxxxxxxxxxxxxxxx
-remotepath = App_Data/Tournaments/
