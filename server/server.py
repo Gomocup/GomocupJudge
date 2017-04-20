@@ -521,9 +521,11 @@ class Client_state:
             elif self.tmp_pos != None:
                 self.save_pos(self.tmp_pos)
                 self.tmp_pos = None
+                output_queue.put((self.addr, "received"))
             elif self.tmp_message != None:
                 self.save_message(self.tmp_message)
                 self.tmp_message = None
+                output_queue.put((self.addr, "received"))
             elif not self.started:
                 self.ask = 'match'
                 output_queue.put((self.addr, "match new " + self.match.player1[2] + ' ' + self.match.player2[2] + \

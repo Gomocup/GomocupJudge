@@ -30,8 +30,9 @@ Sample
     client: ok
 
     client: pos [the latest move, encoded in base64]
+    server: received
     client: message [the latest message, encoded in base64]
-    
+    server: received
 
 ### TODO
 

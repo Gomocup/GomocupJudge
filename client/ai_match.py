@@ -165,8 +165,10 @@ class ai_match(object):
                 status = self.make_move(x, y, i%2+1)
                 if "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
                     self.settings["socket"].send("pos " + psq_to_psq(psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
+                    self.settings["socket"].recv(16) #received
                 if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
                     self.settings["socket"].send("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
+                    self.settings["socket"].recv(16) #received
             except:
                 status = -3
             if status != 0:

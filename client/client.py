@@ -54,8 +54,8 @@ class client(object):
     def listen(self):
         while True:
             buf = self.client_socket.recv(16*1024*1024)
-            print '\"' + buf + '\"'
-            sys.stdout.flush()
+            #print '\"' + buf + '\"'
+            #sys.stdout.flush()
             if buf.lower().startswith("engine exist"):
                 md5 = buf.strip().split()[-1]
                 exist = False
@@ -162,6 +162,7 @@ class client(object):
                 
                 self.client_socket.send("match finished " + psq_to_psq(psq, board_size).encode("base64").replace("\n", "").replace("\r", "") + \
                                         " " + msg.encode("base64").replace("\n", "").replace("\r", "") + " " + str(result) + " " + str(endby))
+                self.client_socket.recv(16) #received
                 
             elif buf.lower().startswith("set real_time_pos"):
                 self.settings["real_time_pos"] = int(buf.strip().split()[-1])
