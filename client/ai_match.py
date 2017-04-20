@@ -1,6 +1,7 @@
 from old_protocol import old_protocol
 from new_protocol import new_protocol
 from check_forbid import check_forbid
+from utility import *
 
 class ai_match(object):
     def __init__(self,
@@ -22,7 +23,8 @@ class ai_match(object):
                  folder_2 = "./",
                  working_dir_1 = "./",
                  working_dir_2 = "./",
-                 tolerance = 1000):
+                 tolerance = 1000,
+                 settings = {}):
         self.board_size = board_size
         self.opening = opening
         self.cmd_1 = cmd_1
@@ -42,6 +44,7 @@ class ai_match(object):
         self.working_dir_1 = working_dir_1
         self.working_dir_2 = working_dir_2
         self.tolerance = tolerance
+        self.settings = settings
         
         self.board = [[0 for i in xrange(self.board_size)] for j in xrange(self.board_size)]
         for i in xrange(len(self.opening)):
@@ -155,9 +158,15 @@ class ai_match(object):
                 break
             try:
                 _msg, x, y, t = self.next_move()
-                msg += '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
-                psq += [(x,y,int(t))]
+                msgturn = '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
+                psqturn = [(x,y,int(t))]
+                msg += msgturn
+                psq += psqturn
                 status = self.make_move(x, y, i%2+1)
+                if "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
+                    self.settings["socket"].send("pos " + psq_to_psq(psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
+                if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
+                    self.settings["socket"].send("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
             except:
                 status = -3
             if status != 0:

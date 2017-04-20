@@ -19,9 +19,9 @@ Sample
     server: engine exist md5 [ai's md5]
     client: yes
 
-    server: match new [ai1's md5] [ai2's md5] [timeout_turn(ms)] [timeout_match(ms)] [rule] [tolerance(ms)] [opening, encoded in pos] [board_size] [max_memory] [game_type]
+    server: match new [ai1's md5] [ai2's md5] [timeout_turn(ms)] [timeout_match(ms)] [rule] [tolerance(ms)] [opening, encoded in pos] [board_size] [max_memory(bytes)]
     client: ok
-    client: match finished [game record, encoded in pos] [ais' messages, encoded in base64] [result: 0 draw, 1 black win, 2 white win] [end by: 0 draw/five, 1 foul, 2 timeout, 3 illegal coordinate, 4 crash]
+    client: match finished [game record, encoded in base64] [ais' messages, encoded in base64] [result: 0 draw, 1 black win, 2 white win] [end by: 0 draw/five, 1 foul, 2 timeout, 3 illegal coordinate, 4 crash]
     server: received
 
     server: set real_time_pos 1
@@ -29,28 +29,21 @@ Sample
     server: set real_time_message 1
     client: ok
 
-    client: pos [the latest move, encoded in pos]
-    server: received
+    client: pos [the latest move, encoded in base64]
     client: message [the latest message, encoded in base64]
-    server: received
+    
+
+### TODO
 
     server: pause
     client: ok
     server: continue
     client: ok
-
     server: terminate
     client: ok
 
-    
-
-### TODO
-* Support CPU affinity
 * Check max_memory
 * Check max folder size
 * Check pondering
 * Start a new thread for each match instance
-* Check forbidden moves (foul) for Renju
-* set real_time_pos
-* set real_time_message
 
