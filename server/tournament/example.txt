@@ -10,4 +10,4 @@ tolerance = 1000
 memory = 367001600
 real_time_pos = 1
 real_time_message = 0
-remote =
+remote = gomocup-online

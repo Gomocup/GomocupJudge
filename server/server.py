@@ -718,6 +718,7 @@ def ftp_upload(upfile, is_online):
         ftp_queue.put((upfile, is_online))
     
 def ftp_upload_process():
+    global ftp_queue
     if remote_info:
         while True:
             upfile, is_online = ftp_queue.get()
