@@ -68,6 +68,8 @@ class Match:
     def assign(self, client):
         self.client = client
         self.started = True
+        print repr(self.player1)
+        print repr(self.player2)
         client.assign(self)
         
     def reinit(self):
@@ -395,6 +397,9 @@ class Client_state:
         pos = base64.b64decode(pos)
         message = base64.b64decode(message)
         result = string.atoi(result)
+        if result > 0:
+            if opening_reverse(self.match.opening):
+                result = 3 - result
         end_with = string.atoi(end_with)
         round = self.match.round
         player1 = self.match.player1
@@ -620,6 +625,7 @@ def check_end():
         if tournament_state.leftmatches > 0:
             end_flag = False
         if end_flag:
+            print_log("Server ended.")
             os._exit(0)
         time.sleep(1)
     
@@ -668,6 +674,16 @@ def opening2pos(opening, board_size):
         pos = pos + str(1 + cury)
     return pos
     
+def opening_reverse(pos):
+    count = 0
+    for c in pos:
+        if c >= 'a' and c <= 'z':
+            count += 1
+    if count % 2 == 1:
+        return True
+    else:
+        return False
+    
 def read_opening(opening_file, board_size):
     fin = open(opening_file, 'r')
     openings_list = []
@@ -705,17 +721,30 @@ def ftp_upload_process():
     if remote_info:
         while True:
             upfile, is_online = ftp_queue.get()
-            bufsize = 1024
-            file = open(upfile, 'rb')
-            if is_online:
-                r_path = remote_info[3]
-            else:
-                r_path = remote_info[4]
-            if not r_path[-1] == '/':
-                r_path = r_path + '/'
-            ftp.storbinary('STOR ' + r_path + upfile.split(slash)[-1], file, bufsize)
-            ftp.set_debuglevel(0)
-            file.close()
+            file = None
+            try:
+                bufsize = 1024
+                file = open(upfile, 'rb')
+                if is_online:
+                    r_path = remote_info[3]
+                else:
+                    r_path = remote_info[4]
+                if not r_path[-1] == '/':
+                    r_path = r_path + '/'
+                ftp.storbinary('STOR ' + r_path + upfile.split(slash)[-1], file, bufsize)
+                ftp.set_debuglevel(0)
+                file.close()
+            except:
+                if file:
+                    file.close()
+                fake_queue = Queue.Queue()
+                fake_queue.put(0)
+                fake_queue, ftp_queue = ftp_queue, fake_queue
+                new_queue = Queue.Queue()
+                new_queue.put((upfile, is_online))
+                while not fake_queue.empty():
+                    new_queue.put(fake_queue.get())
+                ftp_queue = new_queue
         
 def ftp_quit():
     ftp.quit()
@@ -777,7 +806,6 @@ if __name__ == "__main__":
         remote_info = None
     ftp_queue = Queue.Queue()
     ftp = ftp_connect()
-    print 'Connected.'
     result_dir = curpath + slash + 'result' + slash + tur_name
     if os.path.exists(result_dir):
         if not os.path.isdir(result_dir):
@@ -802,7 +830,9 @@ if __name__ == "__main__":
     tend = threading.Thread(target = check_end)
     tend.start()
     tftp = threading.Thread(target = ftp_upload_process)
-    tftp.start()
+    tftp.start()    
+    
+    print_log("Server started.")
 
     while(True):
         cur_input = input_queue.get()
