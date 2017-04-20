@@ -170,8 +170,15 @@ class ai_match(object):
                 if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
                     self.settings["socket"].send("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
                     self.settings["socket"].recv(16) #received
+            except Exception("TLE"):
+                status = -4
+            except Exception("MLE"):
+                status = -3
+            except Exception("FLE"):
+                status = -3
             except:
                 status = -3
+
             if status != 0:
                 if status == 1:
                     result = i % 2 + 1

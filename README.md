@@ -10,6 +10,7 @@ GomocupJudge is a new manager for Gomocup **under development**.
 * The server and clients communicate through socket.  
 * At any time, a client runs at most 1 match.
 * Pondering is not allowed (AI's process is suspended when it is not thinking)
+* Max folder size is 70MB
 
 Sample
 
@@ -46,7 +47,5 @@ Sample
     server: set check_pondering 1
     client: ok
 
-* Check max_memory
-* Check max folder size
 * Start a new thread for each match instance
 

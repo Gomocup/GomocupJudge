@@ -3,6 +3,7 @@ import psutil
 import copy
 import time
 import sys
+from utility import *
 
 class new_protocol(object):
     def __init__(self,
@@ -59,7 +60,15 @@ class new_protocol(object):
         self.pp.resume()
 
     def update_vms(self):
-        self.vms_memory = max(self.vms_memory, self.pp.memory_info()[1])
+        m = 0
+        ds = list(self.pp.children(recursive=True))
+        ds = ds + [self.pp]
+        for d in ds:
+            try:
+                m += d.memory_info()[1]
+            except:
+                pass
+        self.vms_memory = max(self.vms_memory, m)
 
     def wait(self):
         self.resume()
@@ -86,9 +95,16 @@ class new_protocol(object):
                         pass
         end = time.time()
         self.timeused += (max(0, end-start-0.01))*1000
+        if end-start >= timeout_sec:
+            raise Exception("TLE")
 
         self.update_vms()
         self.suspend()
+
+        if self.vms_memory > self.max_memory:
+            raise Exception("MLE")
+        if get_dir_size(self.folder) > 70*1024*1024:
+            raise Exception("FLE")
 
         self.piece[len(self.piece)+1] = (x,y)
         self.board[x][y] = (len(self.piece), self.color)

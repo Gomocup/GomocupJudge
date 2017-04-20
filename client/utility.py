@@ -1,3 +1,5 @@
+import os
+
 def pos_to_str(pos):
     s = ''
     for i in xrange(len(pos)):
@@ -27,3 +29,11 @@ def psq_to_psq(_psq, board_size):
     for x,y,t in _psq:
         psq += str(x)+","+str(y)+","+str(t)+"\n"
     return psq
+
+def get_dir_size(start_path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size

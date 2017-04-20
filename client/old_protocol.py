@@ -1,8 +1,10 @@
 import subprocess, shlex
 import copy
 import time
+import psutil
 import os
 from threading import Timer
+from utility import *
 
 class old_protocol(object):
     def __init__(self,
@@ -43,7 +45,15 @@ class old_protocol(object):
         proc = subprocess.Popen(shlex.split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.working_dir, shell=True)
         try:
             pp = psutil.Process(proc.pid)
-            self.vms_memory = max(self.vms_memory, pp.memory_info()[1])
+            m = 0
+            ds = list(pp.children(recursive=True))
+            ds = ds + [pp]
+            for d in ds:
+                try:
+                    m += d.memory_info()[1]
+                except:
+                    pass
+            self.vms_memory = max(self.vms_memory, m)
         except:
             pass
         kill_proc = lambda p: p.kill()
@@ -55,6 +65,12 @@ class old_protocol(object):
             timer.cancel()
         end = time.time()
         self.timeused += (max(0, end-start-0.01))*1000
+        if end-start >= timeout_sec:
+            raise Exception("TLE")
+        if self.vms_memory > self.max_memory:
+            raise Exception("MLE")
+        if get_dir_size(self.folder) > 70*1024*1024:
+            raise Exception("FLE")
 
     def write_plocha(self):
         f = open(os.path.join(self.working_dir, "PLOCHA.DAT"), "w")
