@@ -95,3 +95,7 @@ server/tournament/*.txt
 server/opening/*.txt
 server/engine/*.zip
 server/result
+
+client/match/*
+client/engine/*
+client/tmp/*
