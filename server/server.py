@@ -70,8 +70,8 @@ class Match:
     def assign(self, client):
         self.client = client
         self.started = True
-        print repr(self.player1)
-        print repr(self.player2)
+        #print repr(self.player1)
+        #print repr(self.player2)
         client.assign(self)
         
     def reinit(self):
