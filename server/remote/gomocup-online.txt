@@ -1,4 +1,4 @@
 host = xxx.xxx.xxx.xxx:xxxx
-username = xxxxxxxx
-password = xxxxxxxx
+username = xxxxxxx
+password = xxxxxxxxxxxxxxxxx
 remotepath = App_Data/Tournaments/
