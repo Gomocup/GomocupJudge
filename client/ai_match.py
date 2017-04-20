@@ -1,5 +1,6 @@
 from old_protocol import old_protocol
 from new_protocol import new_protocol
+from check_forbid import check_forbid
 
 class ai_match(object):
     def __init__(self,
@@ -58,10 +59,10 @@ class ai_match(object):
                 x, y = self.opening[i]
                 if len(self.opening) % 2 == i % 2:
                     self.board_1[x][y] = (i+1, 1)
-                    self.board_2[y][y] = (i+1, 2)
+                    self.board_2[x][y] = (i+1, 2)
                 else:
                     self.board_1[x][y] = (i+1, 2)
-                    self.board_2[y][y] = (i+1, 1)
+                    self.board_2[x][y] = (i+1, 1)
                 
             self.engine_1 = self.init_protocol(self.cmd_1,
                                           self.protocol_1,
@@ -114,6 +115,9 @@ class ai_match(object):
     def make_move(self, x, y, color):
         if self.board[x][y] != 0:
             return -1
+
+        if self.rule == 4 and color == 1 and check_forbid(self.board, x, y):
+            return -2
         
         self.board[x][y] = color
         nx = [0, 1, -1, 1]
@@ -144,7 +148,7 @@ class ai_match(object):
 
     def play(self):
         msg = ''
-        pos = []
+        psq = []
         status = 0
         for i in xrange(len(self.opening), self.board_size**2):
             if self.rule == 4 and i >= self.board_size**2 - 25:
@@ -152,7 +156,7 @@ class ai_match(object):
             try:
                 _msg, x, y, t = self.next_move()
                 msg += '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
-                pos += [(x,y)]
+                psq += [(x,y,int(t))]
                 status = self.make_move(x, y, i%2+1)
             except:
                 status = -3
@@ -176,7 +180,7 @@ class ai_match(object):
         if status == 0:
             result = 0 #draw
             endby = 0 #draw/five
-        return msg, pos, result, endby
+        return msg, psq, result, endby
         
     def init_protocol(self,
                       cmd,

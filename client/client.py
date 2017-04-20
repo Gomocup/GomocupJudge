@@ -4,6 +4,8 @@ import os
 import zipfile
 import shutil
 import platform
+import argparse
+import sys
 
 from ai_match import ai_match
 
@@ -68,12 +70,21 @@ class client(object):
                 y = y - 1
                 i += 2
             pos += [(x,y)]
-        return pos            
+        return pos
+
+    def psq_to_psq(self, _psq, board_size):
+        psq = ''
+        #psq += 'Piskvorky ' + str(board_size) + "x" + str(board_size) + "," + " 11:11," + " 0\n"
+        for x,y,t in _psq:
+            psq += str(x)+","+str(y)+","+str(t)+"\n"
+        return psq
     
     def listen(self):
         while True:
             buf = self.client_socket.recv(16*1024*1024)
-            if buf.lower().startswith("engine exist md5"):
+            print '\"' + buf + '\"'
+            sys.stdout.flush()
+            if buf.lower().startswith("engine exist"):
                 md5 = buf.strip().split()[-1]
                 exist = False
                 for engine in self.engine:
@@ -100,7 +111,10 @@ class client(object):
                 opening = buf[6]
                 board_size = int(buf[7])
                 max_memory = int(buf[8])
-                game_type = int(buf[9])
+                if len(buf) >= 10:
+                    game_type = int(buf[9])
+                else:
+                    game_type = 3
                 self.client_socket.send("ok")
 
                 for engine in self.engine:
@@ -135,15 +149,14 @@ class client(object):
                     if len(exe_list) > 1:
                         for fname in exe_list:
                             if (self.is_os_64bit and '64' in fname) or (not self.is_os_64bit and '64' not in fname):
-                                cmd = os.path.join(self.match_dir, md5, fname)
-                                protocol = 'new' if fname.lower().endswith('pbrain') else 'old'
+                                cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
+                                protocol = 'new' if fname.lower().startswith('pbrain') else 'old'
                                 return cmd, protocol
                     fname = exe_list[0]
                     cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
                     protocol = 'new' if fname.lower().startswith('pbrain') else 'old'
                     return cmd, protocol
-                        
-                        
+                    
                 cmd_1, protocol_1 = get_cmd_protocol(md5_1)
                 cmd_2, protocol_2 = get_cmd_protocol(md5_2)
 
@@ -169,11 +182,12 @@ class client(object):
                                 working_dir_1 = os.path.join(self.match_dir, md5_1),
                                 working_dir_2 = os.path.join(self.match_dir, md5_2),
                                 tolerance = tolerance)
-                msg, pos, result, endby = game.play()
+                msg, psq, result, endby = game.play()
 
-                print msg, pos, result, endby
+                print msg, psq, result, endby
                 
-                self.client_socket.send("match finished " + self.pos_to_str(pos) + " " + msg.encode("base64") + " " + str(result) + " " + str(endby))
+                self.client_socket.send("match finished " + self.psq_to_psq(psq, board_size).encode("base64").replace("\n", "").replace("\r", "") + \
+                                        " " + msg.encode("base64").replace("\n", "").replace("\r", "") + " " + str(result) + " " + str(endby))
                 
             elif buf.lower().startswith("set real_time_pos"):
                 self.settings["real_time_pos"] = int(buf.strip().split()[-1])
@@ -190,15 +204,23 @@ class client(object):
             elif buf.lower().startswith("terminate"):
                 #TODO
                 self.client_socket.send("ok")
-            elif buf.lower().startswith("quit"):
-                self.client_socket.send("bye")
-                break
+            #elif buf.lower().startswith("quit"):
+            #    self.client_socket.send("bye")
+            #    break
             else:
                 self.client_socket.send("unknown command")
                 continue
 
 def main():
-    client(host="localhost", port=6780, working_dir = "C:/Kai/git/GomocupJudge").listen()
+    parser = argparse.ArgumentParser(description='GomocupJudge Client')
+
+    parser.add_argument("--host", dest="host", action="store", required=True)
+    parser.add_argument("--port", dest="port", action="store", required=True)
+    parser.add_argument("--dir", dest="working_dir", action="store", required=True)
+    
+    args = parser.parse_args()
+
+    client(host=args.host, port=int(args.port), working_dir = args.working_dir).listen()
 
 
 if __name__ == '__main__':

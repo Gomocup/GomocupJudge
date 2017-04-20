@@ -38,7 +38,7 @@ class old_protocol(object):
     def run(self):
         timeout_sec = (self.tolerance + min((self.timeout_match - self.timeused), self.timeout_turn)) / 1000.
         start = time.time()
-        proc = subprocess.Popen(shlex.split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.working_dir, shell=False)
+        proc = subprocess.Popen(shlex.split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.working_dir, shell=True)
         kill_proc = lambda p: p.kill()
         timer = Timer(timeout_sec, kill_proc, [proc])
         try:

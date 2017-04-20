@@ -1,6 +1,7 @@
-import subprocess
+import subprocess, shlex
 import copy
 import time
+import sys
 
 class new_protocol(object):
     def __init__(self,
@@ -33,8 +34,8 @@ class new_protocol(object):
                 if board[i][j][0] != 0:
                     self.piece[board[i][j][0]] = (i,j)
 
-        self.process = subprocess.Popen(cmd,
-                                        shell=False,
+        self.process = subprocess.Popen(shlex.split(cmd),
+                                        shell=True,
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
                                         cwd=self.working_dir)

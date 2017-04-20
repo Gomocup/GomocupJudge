@@ -499,13 +499,13 @@ class Client_state:
                 output_queue.put((self.addr, "engine exist " + self.match.player1[2]))
             elif self.has_player1 == False:
                 self.ask = 'player1'
-                output_queue.put((self.addr, "engine send" + base64.b64encode(self.match.player1[1]) + " " + get_base64(self.curpath, self.match.player1[1])))
+                output_queue.put((self.addr, "engine send " + base64.b64encode(self.match.player1[1]) + " " + get_base64(self.curpath, self.match.player1[1])))
             elif self.has_player2 == None:
                 self.ask = 'player2'
                 output_queue.put((self.addr, "engine exist " + self.match.player2[2]))
             elif self.has_player2 == False:
                 self.ask = 'player2'
-                output_queue.put((self.addr, "engine send" + base64.b64encode(self.match.player2[1]) + " " + get_base64(self.curpath, self.match.player2[1])))
+                output_queue.put((self.addr, "engine send " + base64.b64encode(self.match.player2[1]) + " " + get_base64(self.curpath, self.match.player2[1])))
             elif self.sent_real_time_pos == False:
                 self.ask = 'real_time_pos'
                 if self.match.real_time_pos == True:
@@ -528,7 +528,10 @@ class Client_state:
                 output_queue.put((self.addr, "received"))
             elif not self.started:
                 self.ask = 'match'
-                output_queue.put((self.addr, "match new " + str(self.match.matchid) + ' ' + self.match.player1[2] + ' ' + self.match.player2[2] + ' ' + self.match.time_turn + ' ' + self.match.time_match + ' ' + self.match.rule + ' ' + self.match.tolerance + ' ' + self.match.opening))
+                output_queue.put((self.addr, "match new " + self.match.player1[2] + ' ' + self.match.player2[2] + \
+                                  ' ' + self.match.time_turn + ' ' + self.match.time_match + ' ' + self.match.rule + \
+                                  ' ' + self.match.tolerance + ' ' + self.match.opening + ' ' + self.match.board_size + \
+                                  ' ' + self.match.memory))
         else:
             if self.ended:            
                 self.ask = None
