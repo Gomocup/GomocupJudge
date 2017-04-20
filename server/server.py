@@ -50,7 +50,8 @@ class Match:
         self.group_id = (self.player1[0], self.player2[0], self.round)
         self.board_size = board_size
         self.rule = rule
-        self.opening = opening
+        self.opening = opening        
+        self.reverse = opening_reverse(opening)
         self.time_turn = time_turn
         self.time_match = time_match
         self.tolerance = tolerance
@@ -62,7 +63,8 @@ class Match:
         self.end_with = None
         self.time1 = 0
         self.time2 = 0
-        self.moves = 0
+        self.move1 = 0
+        self.move2 = 0
         self.client = None
     
     def assign(self, client):
@@ -78,18 +80,25 @@ class Match:
         self.end_with = None
         self.time1 = 0
         self.time2 = 0
-        self.moves = 0
+        self.move1 = 0
+        self.move2 = 0
         self.client = None
         
     def to_string(self):
-        return repr(self.group_id) + '\t' + repr(self.result) + '\t' + repr(self.end_with) + '\t' + repr(self.time1) + '\t' + repr(self.time2) + '\t' + repr(self.moves)
+        return repr(self.group_id) + '\t' + repr(self.result) + '\t' + repr(self.end_with) + '\t' + repr(self.time1) + '\t' + repr(self.time2) + '\t' + repr(self.move1) + '\t' + repr(self.move2)
     
     def read_string(self, cur_str):
-        cur_group_id, self.result, self.end_with, self.time1, self.time2, self.moves = map(eval, cur_str.split("\t"))
+        cur_group_id, self.result, self.end_with, self.time1, self.time2, self.move1, self.move2 = map(eval, cur_str.split("\t"))
         if self.result != None:
             self.started = True
         else:
             self.started = False
+
+def soft_div(a, b, un):
+    if b != 0:
+        return str(round(a * 1.0 / b)) + un
+    else:
+        return '-'
         
 class Tournament:
     def __init__(self, curpath, engines, tur_name, board_size, rule, openings, is_tournament, time_turn, time_match, tolerance, memory, real_time_pos, real_time_message):
@@ -116,6 +125,15 @@ class Tournament:
         self.ratings = [(i, None, self.engines[i]) for i in range(self.nengines)]
         self.lresult = [[0, 0, 0] for i in range(self.nengines)]
         self.mresult = [[[0, 0, 0] for i in range(self.nengines)] for j in range(self.nengines)]
+        self.times = [0 for i in range(self.nengines)]
+        self.moves = [0 for i in range(self.nengines)]
+        self.games = [0 for i in range(self.nengines)]
+        self.timeouts = [0 for i in range(self.nengines)]
+        self.crashes = [0 for i in range(self.nengines)]
+        self.wins = [[0, 0] for i in range(self.nengines)]
+        self.losses = [[0, 0] for i in range(self.nengines)]
+        self.draws = [[0, 0] for i in range(self.nengines)]
+        self.valids = [True for i in range(self.nengines)]
         matchcount = 0
         for i in range(self.round):
             if self.is_tournament:
@@ -144,7 +162,63 @@ class Tournament:
         self.leftmatches = self.nmatches
         self.load_state()
         self.save_state()
+        self.statistics()
         self.print_table()
+        self.print_statistics()
+    
+    def statistics(self):
+        self.times = [0 for i in range(self.nengines)]
+        self.moves = [0 for i in range(self.nengines)]
+        self.games = [0 for i in range(self.nengines)]
+        self.timeouts = [0 for i in range(self.nengines)]
+        self.crashes = [0 for i in range(self.nengines)]
+        self.wins = [[0, 0] for i in range(self.nengines)]
+        self.losses = [[0, 0] for i in range(self.nengines)]
+        self.draws = [[0, 0] for i in range(self.nengines)]
+        self.valids = [True for i in range(self.nengines)]
+        for match in self.matches:
+            if match.result != None:
+                player1 = match.player1[0]
+                player2 = match.player2[0]
+                self.times[player1] += match.time1
+                self.times[player2] += match.time2
+                self.moves[player1] += match.move1
+                self.moves[player2] += match.move2
+                self.games[player1] += 1
+                self.games[player2] += 1
+                if match.end_with == 2:
+                    if match.result == 1:
+                        self.timeouts[player2] += 1
+                    elif match.result == 2:
+                        self.timeouts[player1] += 1
+                elif match.end_with == 3 or match.end_with == 4:
+                    if match.result == 1:
+                        self.crashes[player2] += 1
+                    elif match.result == 2:
+                        self.crashes[player1] += 1
+                if not match.reverse:
+                    if match.result == 1:
+                        self.wins[player1][0] += 1
+                        self.losses[player2][1] += 1
+                    elif match.result == 2:
+                        self.wins[player2][1] += 1
+                        self.losses[player1][0] += 1
+                    else:
+                        self.draws[player1][0] += 1
+                        self.draws[player2][1] += 1
+                else:
+                    if match.result == 1:
+                        self.wins[player1][1] += 1
+                        self.losses[player2][0] += 1
+                    elif match.result == 2:
+                        self.wins[player2][0] += 1
+                        self.losses[player1][1] += 1
+                    else:
+                        self.draws[player1][1] += 1
+                        self.draws[player2][0] += 1
+        for i in range(self.nengines):
+            if self.games[i] > 0 and (self.timeouts[i] + self.crashes[i]) * 1.0 / self.games[i] > 0.1:
+                self.valids[i] = False
         
     def generate_pgn(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
@@ -153,6 +227,8 @@ class Tournament:
         nmatches = 0
         for match in self.matches:
             if match.result != None:
+                if self.valids[match.player1[0]] == False or self.valids[match.player2[0]] == False:
+                    continue
                 fout.write("[White \"" + str(match.player1[0]) + "#" + match.player1[1].rsplit('.', 1)[0] + "\"]\n")
                 fout.write("[Black \"" + str(match.player2[0]) + "#" + match.player2[1].rsplit('.', 1)[0] + "\"]\n")
                 if match.result == 1:
@@ -258,6 +334,25 @@ class Tournament:
         fout.write("</TBODY>\n</TABLE>\n</BODY>\n</HTML>\n")
         fout.close()
         ftp_upload(result_path + slash + "_table.html", False)
+        
+    def print_statistics(self):
+        result_path = self.curpath + slash + 'result' + slash + tur_name
+        self.compute_elo()
+        fout = open(result_path + slash + "_result.txt", 'w')
+        cur_rank = 0
+        for engine_id, rating, engine_name in self.ratings:
+            cur_rank += 1
+            if not rating:
+                rating = '-'
+            fout.write(str(cur_rank) + '. ' + engine_name + ' ' + str(rating) + '\n')
+            fout.write('    wins: ' + str(self.wins[engine_id][0]) + '+' + str(self.wins[engine_id][1]) + ', ')
+            fout.write('losses: ' + str(self.losses[engine_id][0]) + '+' + str(self.losses[engine_id][1]) + ', ')
+            fout.write('draws: ' + str(self.draws[engine_id][0]) + '+' + str(self.draws[engine_id][1]) + '\n')
+            fout.write('    timeouts: ' + str(self.timeouts[engine_id]) + ', ' + 'errors: ' + str(self.crashes[engine_id]) + ', ' + 'total games: ' + str(self.games[engine_id]) + '\n')
+            fout.write('    time/game: ' + soft_div(self.times[engine_id], self.games[engine_id], 's') + ', ' + 'time/turn: ' + soft_div(self.times[engine_id] * 1000, self.moves[engine_id], 'ms') + ', ' + 'move/game: ' + soft_div(self.moves[engine_id], self.games[engine_id], '') + '\n')
+            fout.write('\n')
+        fout.close()
+        ftp_upload(result_path + slash + "_result.txt", False)
               
     def assign_match(self, client):
         inv_ratings = {}
@@ -353,6 +448,18 @@ def cmp_result(result1, result2):
         
 def extend_pos(pos, board_size, player1, player2):
     return 'Piskvorky ' + str(board_size) + 'x' + str(board_size) + ', 11:11, 0\n' + pos + player1 + '\n' + player2 + '\n' + '-1\n'
+    
+def parse_pos(pos, opening):
+    len_opening = opening_length(opening)
+    times = map(lambda x: string.atoi(x.split(',')[-1]), pos.strip().split('\n'))[len_opening:]
+    len_times = len(times)
+    times1 = times[0::2]
+    times2 = times[1::2]
+    time1 = sum(times1)
+    time2 = sum(times2)
+    move1 = len(times1)
+    move2 = len(times2)
+    return (time1, time2, move1, move2)
                     
 class Client_state:
     def __init__(self, curpath, addr):
@@ -418,7 +525,8 @@ class Client_state:
         fmessage.close()
         ftp_upload(result_path + slash + 'message.txt', False)
         self.match.result = result
-        self.match.end_with = end_with     
+        self.match.end_with = end_with  
+        self.match.time1, self.match.time2, self.match.move1, self.match.move2 = parse_pos(pos, self.match.opening)
         cur_tur = self.tournament
         player1_id = player1[0]
         player2_id = player2[0]
@@ -457,7 +565,9 @@ class Client_state:
         self.tmp_message = None
         
         self.tournament.save_state()
+        self.tournament.statistics()
         self.tournament.print_table()
+        self.tournament.print_statistics()
         
         cur_tur.leftmatches -= 1
         if cur_tur.leftmatches == 0:
@@ -683,6 +793,13 @@ def opening_reverse(pos):
         return True
     else:
         return False
+        
+def opening_length(pos):
+    count = 0
+    for c in pos:
+        if c >= 'a' and c <= 'z':
+            count += 1
+    return count
     
 def read_opening(opening_file, board_size):
     fin = open(opening_file, 'r')
