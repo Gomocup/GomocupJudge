@@ -510,6 +510,7 @@ class Client_state:
             
     def end(self, pos, message, result, end_with):
         pos = base64.b64decode(pos)
+        pos = opening_pos2psq(self.match.opening) + pos
         message = base64.b64decode(message)
         result = string.atoi(result)
         if result > 0:
