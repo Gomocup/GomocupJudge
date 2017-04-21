@@ -583,7 +583,7 @@ class Client_state:
     def save_pos(self, pos):
         pos = base64.b64decode(pos)
         if not self.cur_pos:
-            self.cur_pos = pos
+            self.cur_pos = opening_pos2psq(self.match.opening) + pos
         else:
             self.cur_pos = self.cur_pos + pos
         pos_name = self.addr.replace('.', '_').replace(':', '_') + '.psq'
@@ -796,7 +796,16 @@ def opening2pos(opening, board_size):
         pos = pos + chr(ord('a') + curx)
         pos = pos + str(1 + cury)
     return pos
-    
+
+def opening_pos2psq(pos):
+    poses = re.findall(r'[a-z][0-9]{1,2}', pos)
+    cur_psq = ''
+    for p in poses:
+        px = ord(p[0]) - ord('a')
+        py = string.atoi(p[1:]) - 1
+        cur_psq += str(px) + ',' + str(py) + ',' + '0\n'
+    return cur_psq
+ 
 def opening_reverse(pos):
     count = 0
     for c in pos:
