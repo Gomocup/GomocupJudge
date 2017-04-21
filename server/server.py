@@ -451,7 +451,11 @@ def extend_pos(pos, board_size, player1, player2):
     
 def parse_pos(pos, opening):
     len_opening = opening_length(opening)
-    times = map(lambda x: string.atoi(x.split(',')[-1]), pos.strip().split('\n'))[len_opening:]
+    spos = pos.strip()
+    if spos:
+        times = map(lambda x: string.atoi(x.split(',')[-1]), pos.strip().split('\n'))[len_opening:]
+    else:
+        times = []
     len_times = len(times)
     times1 = times[0::2]
     times2 = times[1::2]
