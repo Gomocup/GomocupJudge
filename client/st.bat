@@ -1,0 +1,1 @@
+python client.py --host localhost --port 50007 --dir E:\Programming\CPP\Gomocup\Organization\GomocupJudge\client\temp

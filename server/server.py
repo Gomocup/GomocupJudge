@@ -34,7 +34,7 @@ def get_base64(curpath, engine):
         fin.close()
         if not reads:
             return None
-        return base64.b64encode(reads)
+        return re.sub(r'\s+', '', base64.b64encode(reads))
     else:
         return None        
 
@@ -479,7 +479,9 @@ class Client_state:
         self.sent_real_time_pos = None
         self.sent_real_time_message = None
         self.tmp_pos = None
+        self.cur_pos = None
         self.tmp_message = None
+        self.cur_message = None
     
     def assign(self, match):
         self.active = True
@@ -495,7 +497,9 @@ class Client_state:
         self.sent_real_time_pos = False
         self.sent_real_time_message = False
         self.tmp_pos = None
+        self.cur_pos = None
         self.tmp_message = None
+        self.cur_message = None
         outstr = 'Game ' + str(self.match.group_id) + ' started on Client ' + self.addr + '.'
         print_log(outstr)
             
@@ -561,7 +565,9 @@ class Client_state:
         self.sent_real_time_pos = None
         self.sent_real_time_message = None
         self.tmp_pos = None
+        self.cur_pos = None
         self.tmp_message = None
+        self.cur_message = None
         
         self.tournament.save_state()
         self.tournament.statistics()
@@ -576,6 +582,10 @@ class Client_state:
             
     def save_pos(self, pos):
         pos = base64.b64decode(pos)
+        if not self.cur_pos:
+            self.cur_pos = pos
+        else:
+            self.cur_pos = self.cur_pos + pos
         pos_name = self.addr.replace('.', '_').replace(':', '_') + '.psq'
         tmp_path = self.curpath + slash + 'result' + slash + 'tmp'
         if os.path.exists(tmp_path):
@@ -586,12 +596,16 @@ class Client_state:
             os.makedirs(tmp_path)
         pos_path = tmp_path + slash + pos_name
         fpos = open(pos_path, 'w')
-        fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+        fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
         fpos.close()
         ftp_upload(pos_path, True)
         
     def save_message(self, message):
         message = base64.b64decode(message)
+        if not self.cur_message:
+            self.cur_message = message
+        else:
+            self.cur_message = self.cur_message + message
         message_name = self.addr.replace('.', '_').replace(':', '_') + '.txt'    
         tmp_path = self.curpath + slash + 'result' + slash + 'tmp'
         if os.path.exists(tmp_path):
@@ -602,7 +616,7 @@ class Client_state:
             os.makedirs(tmp_path)
         message_path = tmp_path + slash + message_name
         fmessage = open(message_path, 'w')
-        fmessage.write(message)
+        fmessage.write(cur_message)
         fmessage.close()
         ftp_upload(message_path, True)
     
@@ -813,6 +827,43 @@ def read_opening(opening_file, board_size):
     fin.close()
     return openings_list
     
+class Ftp_Queue:
+    def __init__(self):
+        self.mutex = threading.Lock()
+        self.ele = []
+    
+    def get(self):
+        while True:
+            if self.mutex.acquire():
+                if not self.ele:
+                    self.mutex.release()
+                else:
+                    ret = self.ele[0]
+                    del self.ele[0]
+                    self.mutex.release()
+                    return ret
+            time.sleep(1)
+    
+    def put(self, ele):
+        if self.mutex.acquire():
+            if ele not in self.ele:
+                self.ele.append(ele)
+            self.mutex.release()
+        
+    def put_to_head(self, ele):
+        if self.mutex.acquire():
+            self.ele.insert(0, ele)
+            self.mutex.release()
+    
+    def empty(self):
+        if self.mutex.acquire():
+            if not self.ele:
+                self.mutex.release()
+                return True
+            else:
+                self.mutex.release()
+                return False
+    
 def ftp_connect():
     if remote_info:
         ftp_server = remote_info[0]
@@ -854,14 +905,7 @@ def ftp_upload_process():
             except:
                 if file:
                     file.close()
-                fake_queue = Queue.Queue()
-                fake_queue.put(0)
-                fake_queue, ftp_queue = ftp_queue, fake_queue
-                new_queue = Queue.Queue()
-                new_queue.put((upfile, is_online))
-                while not fake_queue.empty():
-                    new_queue.put(fake_queue.get())
-                ftp_queue = new_queue
+                ftp_queue.put_to_head((upfile, is_online))
         
 def ftp_quit():
     ftp.quit()
@@ -921,7 +965,7 @@ if __name__ == "__main__":
         remote_info = (remote_host, remote_username, remote_password, remote_online_path, remote_tur_path)
     else:
         remote_info = None
-    ftp_queue = Queue.Queue()
+    ftp_queue = Ftp_Queue()
     ftp = ftp_connect()
     result_dir = curpath + slash + 'result' + slash + tur_name
     if os.path.exists(result_dir):

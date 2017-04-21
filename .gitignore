@@ -99,3 +99,4 @@ server/result
 client/match/*
 client/engine/*
 client/tmp/*
+temp
