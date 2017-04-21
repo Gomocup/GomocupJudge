@@ -282,14 +282,14 @@ class Tournament:
                     break
                 reads = reads.strip()
                 reads = re.split(r'\s+', reads)
-                ratings.append((string.atoi(reads[1].split('#', 1)[0]), string.atoi(reads[2]), reads[1].split('#', 1)[1]))
+                ratings.append((string.atoi(reads[1].split('#', 1)[0]), string.atoi(reads[2]), reads[1].split('#', 1)[1], string.atoi(reads[4])))
             fin.close()
         inratings = [False for i in range(self.nengines)]
-        for engine_id, rating, engine_name in ratings:
+        for engine_id, rating, engine_name, rating_m in ratings:
             inratings[engine_id] = True
         for i in range(self.nengines):
             if not inratings[i]:
-                ratings.append((i, None, self.engines[i].rsplit('.', 1)[0]))
+                ratings.append((i, None, self.engines[i].rsplit('.', 1)[0], None))
         self.ratings = ratings
         
     def print_table(self):
@@ -302,14 +302,14 @@ class Tournament:
         fout.write("<TBODY align=center>\n")
         fout.write("<TR><TH>#</TH><TH>Name</TH><TH>Elo</TH><TH>Total</TH>")
         cur_rank = 0
-        for engine_id, rating, engine_name in self.ratings:
+        for engine_id, rating, engine_name, rating_m in self.ratings:
             cur_rank += 1
             cur_name = engine_name
             short_name = cur_name[:min(3, len(cur_name))]
             fout.write("<TH><NUM>" + str(cur_rank) + "</NUM><BR/><NAME>" + short_name + "<NAME></TH>")
         fout.write("</TR>\n")
         cur_rank = 0
-        for engine_id, rating, engine_name in self.ratings:
+        for engine_id, rating, engine_name, rating_m in self.ratings:
             cur_rank += 1
             cur_name = engine_name
             cur_lresult = self.lresult[engine_id]
@@ -339,7 +339,7 @@ class Tournament:
         result_path = self.curpath + slash + 'result' + slash + tur_name
         fout = open(result_path + slash + "_result.txt", 'w')
         cur_rank = 0
-        for engine_id, rating, engine_name in self.ratings:
+        for engine_id, rating, engine_name, rating_m in self.ratings:
             cur_rank += 1
             if not rating:
                 rating = '-'
@@ -355,18 +355,18 @@ class Tournament:
               
     def assign_match(self, client):
         inv_ratings = {}
-        for engine_id, rating, engine_name in self.ratings:
+        for engine_id, rating, engine_name, rating_m in self.ratings:
             if rating != None:
-                inv_ratings[engine_id] = rating
+                inv_ratings[engine_id] = (rating, rating_m)
             else:
-                inv_ratings[engine_id] = - random.randint(0, 100)
+                inv_ratings[engine_id] = (0, random.randint(0, 100))
         minelo = None
         minind = -1
         for i in range(self.nmatches):
             if self.matches[i].started == False:
                 player1 = self.matches[i].player1[0]
                 player2 = self.matches[i].player2[0]
-                curelo = inv_ratings[player1] + inv_ratings[player2]
+                curelo = inv_ratings[player1][0] - inv_ratings[player1][1] + inv_ratings[player2][0] - inv_ratings[player2][1]
                 if minelo == None or curelo < minelo:
                     minelo = curelo
                     minind = i
@@ -1009,7 +1009,7 @@ if __name__ == "__main__":
         print cur_input
         inaddr = cur_input[0]
         instr = cur_input[1].strip()
-        sinstr = re.split(r'\s+', instr)
+        sinstr = re.split(r'\s', instr)
         cur_client = clients_state[inaddr]
         if len(sinstr) == 0:
             continue
