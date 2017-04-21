@@ -289,7 +289,7 @@ class Tournament:
             inratings[engine_id] = True
         for i in range(self.nengines):
             if not inratings[i]:
-                ratings.append((i, None, self.engines[i]))
+                ratings.append((i, None, self.engines[i].rsplit('.', 1)[0]))
         self.ratings = ratings
         
     def print_table(self):
