@@ -56,7 +56,12 @@ class old_protocol(object):
             self.vms_memory = max(self.vms_memory, m)
         except:
             pass
-        kill_proc = lambda p: p.kill()
+        def kill_proc(p):
+            _pp = psutil.Process(p.pid)
+            for pp in _pp.children(recursive=True):
+                pp.kill()
+            _pp.kill()
+                
         timer = Timer(timeout_sec, kill_proc, [proc])
         try:
             timer.start()
