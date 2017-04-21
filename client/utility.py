@@ -27,7 +27,7 @@ def psq_to_psq(_psq, board_size):
     psq = ''
     #psq += 'Piskvorky ' + str(board_size) + "x" + str(board_size) + "," + " 11:11," + " 0\n"
     for x,y,t in _psq:
-        psq += str(x)+","+str(y)+","+str(t)+"\n"
+        psq += str(x+1)+","+str(y+1)+","+str(t)+"\n"
     return psq
 
 def get_dir_size(start_path):
