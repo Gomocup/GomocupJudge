@@ -39,7 +39,7 @@ class new_protocol(object):
                     self.piece[board[i][j][0]] = (i,j)
 
         self.process = subprocess.Popen(shlex.split(cmd),
-                                        shell=True,
+                                        shell=False,
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
                                         cwd=self.working_dir)
@@ -111,7 +111,7 @@ class new_protocol(object):
                     except:
                         pass
         end = time.time()
-        self.timeused += int(max(0, end-start-0.01))*1000
+        self.timeused += int(max(0, end-start-0.01)*1000)
         if end-start >= timeout_sec:
             raise Exception("TLE")
 
@@ -151,7 +151,10 @@ class new_protocol(object):
         self.write_to_process("END\n")
         time.sleep(0.5)
         if self.process.poll() is None:
-            self.process.kill()
+            #self.process.kill()
+            for pp in self.pp.children(recursive=True):
+                pp.kill()
+            self.pp.kill()
 
 
 def main():
