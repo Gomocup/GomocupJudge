@@ -520,7 +520,10 @@ class Client_state:
         result_path = self.curpath + slash + 'result' + slash + tur_name
         pos_path = result_path + slash + pos_name
         fpos = open(pos_path, 'w')
-        fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+        if not self.match.reverse:
+            fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+        else:
+            fpos.write(extend_pos(pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
         fpos.close()
         ftp_upload(pos_path, False)
         fmessage = open(result_path + slash + 'message.txt', 'a')
@@ -597,7 +600,10 @@ class Client_state:
             os.makedirs(tmp_path)
         pos_path = tmp_path + slash + pos_name
         fpos = open(pos_path, 'w')
-        fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+        if not self.match.reverse:
+            fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+        else:
+            fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
         fpos.close()
         ftp_upload(pos_path, True)
         
