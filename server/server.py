@@ -318,7 +318,7 @@ class Tournament:
             else:
                 rating_str = str(rating)
             fout.write("<TR><TD><NUM>" + str(cur_rank) + "</NUM></TD><TD><NAME>" + cur_name + "</NAME></TD><TD>" + rating_str + "</TD><TD>" + str(cur_lresult[0]) + ":" + str(cur_lresult[1]) + "</TD>")
-            for engine_id_2, rating_2, engine_name_2 in self.ratings:
+            for engine_id_2, rating_2, engine_name_2, rating_m_2 in self.ratings:
                 if engine_id == engine_id_2:
                     fout.write("<TD class=\"dash\">-</TD>")
                 else:
