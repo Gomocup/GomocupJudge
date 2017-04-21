@@ -65,7 +65,7 @@ class client(object):
                     if engine[1] == md5:
                         exist = True
                         break
-                self.client_socket.send("yes" if engine[1] == md5 else "no")
+                self.client_socket.send("yes" if exist else "no")
             elif buf.lower().startswith("engine send"):
                 base64fname, base64engine = buf.strip().split(' ')[-2:]
                 fname = base64fname.decode('base64')
