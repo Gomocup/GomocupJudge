@@ -299,7 +299,7 @@ class Tournament:
         fout.write("<HTML>\n<HEAD>\n<TITLE>Piskvork tournament result</TITLE>\n<LINK href=\"piskvork.css\" type=text/css rel=stylesheet>\n</HEAD>\n")
         fout.write("<BODY>\n")
         fout.write("<TABLE border=1 class=\"result\">\n")
-        fout.write("<LINK href=\"http://gomocup.org/wp-content/tournaments/tables/piskvork.css\" type=text/css rel=stylesheet/>\n")
+        #fout.write("<LINK href=\"http://gomocup.org/wp-content/tournaments/tables/piskvork.css\" type=text/css rel=stylesheet/>\n")
         fout.write("<TBODY align=center>\n")
         fout.write("<TR><TH>#</TH><TH>Name</TH><TH>Elo</TH><TH>Total</TH>")
         cur_rank = 0
