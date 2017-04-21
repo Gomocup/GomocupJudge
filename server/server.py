@@ -714,7 +714,7 @@ def recv_client(conn, addr):
             return
 
 def output_client():
-    while(True):
+    while(True):    
         addr, outstr = output_queue.get()
         conn = trecvs[addr][1]
         conn.sendall(outstr)
