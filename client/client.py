@@ -20,17 +20,19 @@ class client(object):
         self.engine_dir = os.path.join(self.working_dir, "engine")
         self.match_dir = os.path.join(self.working_dir, "match")
         self.folder_dir = os.path.join(self.match_dir, "folder")
-        self.engine = []
-        for fname in os.listdir(self.engine_dir):
-            if fname.lower().endswith(".zip") or fname.lower().endswith(".exe"):
-                self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
-        self.is_os_64bit = platform.machine().endswith('64')
         if not os.path.isdir(self.engine_dir):
             os.mkdir(self.engine_dir)
         if not os.path.isdir(self.match_dir):
             os.mkdir(self.match_dir)
         if not os.path.isdir(self.folder_dir):
             os.mkdir(self.folder_dir)
+            
+        self.engine = []
+        for fname in os.listdir(self.engine_dir):
+            if fname.lower().endswith(".zip") or fname.lower().endswith(".exe"):
+                self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
+        self.is_os_64bit = platform.machine().endswith('64')
+        
         self.settings = {}
         self.settings["real_time_pos"] = 0
         self.settings["real_time_message"] = 0
@@ -63,7 +65,7 @@ class client(object):
                     if engine[1] == md5:
                         exist = True
                         break
-                self.client_socket.send("yes" if engine[1] == md5 else "no")
+                self.client_socket.send("yes" if exist else "no")
             elif buf.lower().startswith("engine send"):
                 base64fname, base64engine = buf.strip().split(' ')[-2:]
                 fname = base64fname.decode('base64')
