@@ -197,8 +197,11 @@ class ai_match(object):
                 break
         print endby
         sys.stdout.flush()
-        self.engine_1.clean()
-        self.engine_2.clean()
+        try:
+            self.engine_1.clean()
+            self.engine_2.clean()
+        except:
+            pass
         if status == 0:
             result = 0 #draw
             endby = 0 #draw/five
