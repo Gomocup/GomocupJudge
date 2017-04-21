@@ -54,21 +54,30 @@ class new_protocol(object):
         self.suspend()
 
     def suspend(self):
-        self.pp.suspend()
+        try:
+            self.pp.suspend()
+        except:
+            pass
 
     def resume(self):
-        self.pp.resume()
+        try:
+            self.pp.resume()
+        except:
+            pass
 
     def update_vms(self):
-        m = 0
-        ds = list(self.pp.children(recursive=True))
-        ds = ds + [self.pp]
-        for d in ds:
-            try:
-                m += d.memory_info()[1]
-            except:
-                pass
-        self.vms_memory = max(self.vms_memory, m)
+        try:
+            m = 0
+            ds = list(self.pp.children(recursive=True))
+            ds = ds + [self.pp]
+            for d in ds:
+                try:
+                    m += d.memory_info()[1]
+                except:
+                    pass
+            self.vms_memory = max(self.vms_memory, m)
+        except:
+            pass
 
     def wait(self):
         self.resume()
