@@ -58,7 +58,7 @@ class ai_match(object):
         self.board_2 = [[(0,0) for i in xrange(self.board_size)] for j in xrange(self.board_size)]
 
     def next_move(self):
-        print self.move_num
+        #print self.move_num
         if self.move_num == 0:
             for i in xrange(len(self.opening)):
                 x, y = self.opening[i]
