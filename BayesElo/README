@@ -1,0 +1,12 @@
+bayeselo
+by Rémi Coulom
+http://remi.coulom.free.fr/Bayesian-Elo/
+
+To compile, "cd" into the BayesElo directory and "make".
+
+This software is protected under the terms of the GNU GPL
+See http://www.gnu.org/copyleft/gpl.html
+
+
+2016.03.18
+Modification: Having changed eloAdvantage to 0.0 and eloDraw to 0.01, in order to support the game of gomoku.
