@@ -44,14 +44,20 @@ class new_protocol(object):
                                         stdout=subprocess.PIPE,
                                         cwd=self.working_dir)
         self.pp = psutil.Process(self.process.pid)
-        self.process.stdin.write("START " + str(len(self.board)) + "\n")
-        self.process.stdin.write("INFO timeout_turn " + str(self.timeout_turn) + "\n")
-        self.process.stdin.write("INFO timeout_match " + str(self.timeout_match) + "\n")
-        self.process.stdin.write("INFO max_memory " + str(self.max_memory) + "\n")
-        self.process.stdin.write("INFO game_type " + str(self.game_type) + "\n")
-        self.process.stdin.write("INFO rule " + str(self.rule) + "\n")
-        self.process.stdin.write("INFO folder " + str(self.folder) + "\n")
+        self.write_to_process("START " + str(len(self.board)) + "\n")
+        self.write_to_process("INFO timeout_turn " + str(self.timeout_turn) + "\n")
+        self.write_to_process("INFO timeout_match " + str(self.timeout_match) + "\n")
+        self.write_to_process("INFO max_memory " + str(self.max_memory) + "\n")
+        self.write_to_process("INFO game_type " + str(self.game_type) + "\n")
+        self.write_to_process("INFO rule " + str(self.rule) + "\n")
+        self.write_to_process("INFO folder " + str(self.folder) + "\n")
         self.suspend()
+
+    def write_to_process(self, msg):
+        #print '===>', msg
+        #sys.stdout.flush()
+        self.process.stdin.write(msg)
+        self.process.stdin.flush()
 
     def suspend(self):
         try:
@@ -93,6 +99,8 @@ class new_protocol(object):
             if buf == "":
                 time.sleep(0.01)
             else:
+                #print '<===', buf
+                #sys.stdout.flush()
                 if buf.lower().startswith("message"):
                     msg += buf
                 else:
@@ -103,7 +111,7 @@ class new_protocol(object):
                     except:
                         pass
         end = time.time()
-        self.timeused += (max(0, end-start-0.01))*1000
+        self.timeused += int(max(0, end-start-0.01))*1000
         if end-start >= timeout_sec:
             raise Exception("TLE")
 
@@ -123,24 +131,24 @@ class new_protocol(object):
         self.piece[len(self.piece)+1] = (x,y)
         self.board[x][y] = (len(self.piece), 3 - self.color)
 
-        self.process.stdin.write("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
-        self.process.stdin.write("TURN " + str(x) + "," + str(y) + "\n")
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
+        self.write_to_process("TURN " + str(x) + "," + str(y) + "\n")
 
         return self.wait()
 
     def start(self):
-        self.process.stdin.write("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
-        self.process.stdin.write("BOARD\n")
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
+        self.write_to_process("BOARD\n")
         for i in xrange(1, len(self.piece)+1):
             self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + "," + str(self.board[self.piece[i][0]][self.piece[i][1]][1]) + "\n")
-        self.process.stdin.write("DONE\n")
+        self.write_to_process("DONE\n")
 
         return self.wait()
 
     def clean(self):
         self.resume()
         
-        self.process.stdin.write("END\n")
+        self.write_to_process("END\n")
         time.sleep(0.5)
         if self.process.poll() is None:
             self.process.kill()

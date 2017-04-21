@@ -58,6 +58,7 @@ class ai_match(object):
         self.board_2 = [[(0,0) for i in xrange(self.board_size)] for j in xrange(self.board_size)]
 
     def next_move(self):
+        print self.move_num
         if self.move_num == 0:
             for i in xrange(len(self.opening)):
                 x, y = self.opening[i]
@@ -241,22 +242,22 @@ def main():
     test = ai_match(
         board_size = 20,
         opening = [(10,10)],
-        cmd_1 = "C:/Kai/git/GomocupJudge/engine/pbrain-yixin15.exe",
-        cmd_2 = "C:/Kai/git/GomocupJudge/engine/pisq7.exe",
+        cmd_1 = "C:/GomocupJudge/client/match/2b6d35c3ca7a8ec313373b4a568069f8/pbrain-sWINe2017_64.exe",
+        cmd_2 = "C:/GomocupJudge/client/match/1b7dbb708ee4c6d9398b9a0a878961c8/QMENTAT6.exe",
         protocol_1 = "new",
         protocol_2 = "old",
         timeout_turn_1 = 5000,
         timeout_turn_2 = 5000,
-        timeout_match_1 = 100000,
-        timeout_match_2 = 100000,
+        timeout_match_1 = 120000,
+        timeout_match_2 = 120000,
         max_memory_1 = 350*1024*1024,
         max_memory_2 = 350*1024*1024,
         game_type = 1,
         rule = 0,
-        folder_1 = "C:/Kai/git/GomocupJudge/tmp",
-        folder_2 = "C:/Kai/git/GomocupJudge/tmp",
-        working_dir_1 = "C:/Kai/git/GomocupJudge/engine",
-        working_dir_2 = "C:/Kai/git/GomocupJudge/engine",
+        folder_1 = "C:/GomocupJudge/client/match/folder/2b6d35c3ca7a8ec313373b4a568069f8/",
+        folder_2 = "C:/GomocupJudge/client/match/folder/1b7dbb708ee4c6d9398b9a0a878961c8/",
+        working_dir_1 = "C:/GomocupJudge/client/match/2b6d35c3ca7a8ec313373b4a568069f8/",
+        working_dir_2 = "C:/GomocupJudge/client/match/1b7dbb708ee4c6d9398b9a0a878961c8/",
         tolerance = 1000)
 
     '''
@@ -267,8 +268,8 @@ def main():
         test.print_board()
     '''
 
-    msg, pos, ret = test.play()
-    print msg, pos, ret
+    msg, pos, ret, endby = test.play()
+    print msg, pos, ret, endby
         
 if __name__ == '__main__':
     main()

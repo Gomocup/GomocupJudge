@@ -64,7 +64,7 @@ class old_protocol(object):
         finally:
             timer.cancel()
         end = time.time()
-        self.timeused += (max(0, end-start-0.01))*1000
+        self.timeused += int(max(0, end-start-0.01))*1000
         if end-start >= timeout_sec:
             raise Exception("TLE")
         if self.vms_memory > self.max_memory:
