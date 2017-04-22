@@ -6,6 +6,7 @@ import shutil
 import platform
 import argparse
 import sys
+import time
 
 from ai_match import ai_match
 from utility import *
@@ -65,15 +66,37 @@ class client(object):
         self.debugfile.flush()
 
     def send(self, msg):
+        msg = msg.replace("\r", "")
+        msg = msg.replace("\n", "")
         if self.debug:
             self.debug_log("send: " + msg + "\n")
-        self.client_socket.send(msg)
+        self.client_socket.send(msg + "\n")
 
-    def recv(self, size):
+    def _recv(self, size):
+        try:
+            self.buf_socket
+        except:
+            self.buf_socket = ""
+
+        for i in xrange(len(self.buf_socket)):
+            if self.buf_socket[i] == "\n":
+                ret = self.buf_socket[:i]
+                self.buf_socket = self.buf_socket[i+1:]
+                return ret
+        
         buf = self.client_socket.recv(size)
         if self.debug:
             self.debug_log("recv("+str(size)+"): " + buf + "\n")
-        return buf
+        self.buf_socket = self.buf_socket + buf
+        
+        return None
+
+    def recv(self, size):
+        while True:
+            ret = self.recv(size)
+            if ret is not None:
+                return ret
+            time.sleep(0.01)
     
     def listen(self):
         while True:
