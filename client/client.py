@@ -93,7 +93,7 @@ class client(object):
 
     def recv(self, size):
         while True:
-            ret = self.recv(size)
+            ret = self._recv(size)
             if ret is not None:
                 return ret
             time.sleep(0.01)
