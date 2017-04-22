@@ -710,18 +710,23 @@ def disconnect_addr(addr):
         del trecvs[addr]
 
 def recv_client(conn, addr):
+    global recv_str, recv_mutex
     while True:
         try:
             data = conn.recv(5242800)
             if not data:
                 disconnect_addr(addr)
                 return
-            if data[-1] == '\n':
-                data = data[:-1]
-            for edata in data.split('\n'):
-                input_queue.put((addr, edata))
-                out_str = repr(('input', addr, edata))
-                print_log(out_str, net_log_file)
+            if recv_mutex.acquire():
+                recv_str = recv_str + data
+                sdata = recv_str.split('\n')
+                recv_str = sdata[-1]
+                sdata = sdata[:-1]
+                for edata in sdata:
+                    input_queue.put((addr, edata))
+                    out_str = repr(('input', addr, edata))
+                    print_log(out_str, net_log_file)
+                recv_mutex.release()
         except:
             disconnect_addr(addr)
             if clients_state.has_key(addr):
@@ -961,6 +966,8 @@ if __name__ == "__main__":
     else:
         slash = '/'
 
+    recv_str = ''
+    recv_mutex = threading.Lock()
     tournament_name = sys.argv[1]
     tournament_file = curpath + slash + 'tournament' + slash + tournament_name + '.txt'
     tournament = read_tournament(tournament_file)
