@@ -1018,7 +1018,7 @@ if __name__ == "__main__":
     else:
         os.makedirs(result_dir)
     log_file = result_dir + slash + 'log.txt'
-    com_log_file = result_dir + slash + 'com_log.txt'
+    net_log_file = result_dir + slash + 'netlog.txt'
     state_file = result_dir + slash + 'state.txt'
     result_file = result_dir + slash + 'result.txt'
     message_file = result_dir + slash + 'message.txt'
