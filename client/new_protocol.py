@@ -4,6 +4,8 @@ import copy
 import time
 import sys
 from utility import *
+from Queue import Queue, Empty
+from threading  import Thread
 
 class new_protocol(object):
     def __init__(self,
@@ -42,7 +44,18 @@ class new_protocol(object):
                                         shell=False,
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
+                                        bufsize=1,
+                                        close_fds='posix' in sys.builtin_module_names,
                                         cwd=self.working_dir)
+        def enqueue_output(out, queue):
+            for line in iter(out.readline, b''):
+                queue.put(line)
+            out.close()
+        self.queue = Queue()
+        queuethread = Thread(target=enqueue_output, args=(self.process.stdout, self.queue))
+        queuethread.daemon = True # thread dies with the program
+        queuethread.start()
+        
         self.pp = psutil.Process(self.process.pid)
         self.write_to_process("START " + str(len(self.board)) + "\n")
         self.write_to_process("INFO timeout_turn " + str(self.timeout_turn) + "\n")
@@ -93,10 +106,10 @@ class new_protocol(object):
         timeout_sec = (self.tolerance + min((self.timeout_match - self.timeused), self.timeout_turn)) / 1000.
         start = time.time()
         while True:
-            buf = self.process.stdout.readline()
-            if time.time() - start > timeout_sec:
-                break
-            if buf == "":
+            try: buf = self.queue.get_nowait()
+            except Empty:
+                if time.time() - start > timeout_sec:
+                    break
                 time.sleep(0.01)
             else:
                 #print '<===', buf

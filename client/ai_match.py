@@ -161,6 +161,7 @@ class ai_match(object):
                 break
             try:
                 _msg, x, y, t = self.next_move()
+                print x,y,t
                 msgturn = '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
                 psqturn = [(x,y,int(t))]
                 msg += msgturn
@@ -200,6 +201,9 @@ class ai_match(object):
         sys.stdout.flush()
         try:
             self.engine_1.clean()
+        except:
+            pass
+        try:
             self.engine_2.clean()
         except:
             pass
