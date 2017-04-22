@@ -65,12 +65,14 @@ class client(object):
         self.debugfile.flush()
 
     def send(self, msg):
-        self.debug_log("send: " + msg + "\n")
+        if self.debug:
+            self.debug_log("send: " + msg + "\n")
         self.client_socket.send(msg)
 
     def recv(self, size):
         buf = self.client_socket.recv(size)
-        self.debug_log("recv("+str(size)+"): " + buf + "\n")
+        if self.debug:
+            self.debug_log("recv("+str(size)+"): " + buf + "\n")
         return buf
     
     def listen(self):
