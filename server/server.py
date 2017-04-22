@@ -716,9 +716,12 @@ def recv_client(conn, addr):
             if not data:
                 disconnect_addr(addr)
                 return
-            input_queue.put((addr, data))
-            out_str = repr(('input', addr, data))
-            print_log(out_str, net_log_file)
+            if data[-1] == '\n':
+                data = data[:-1]
+            for edata in data.split('\n'):
+                input_queue.put((addr, edata))
+                out_str = repr(('input', addr, edata))
+                print_log(out_str, net_log_file)
         except:
             disconnect_addr(addr)
             if clients_state.has_key(addr):
@@ -737,7 +740,7 @@ def output_client():
         print_log(out_str, net_log_file)
         if trecvs.has_key(addr):
             conn = trecvs[addr][1]
-            conn.sendall(outstr)
+            conn.sendall(outstr + '\n')
             if outstr == "end":
                 disconnect_addr(addr)
 
