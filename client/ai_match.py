@@ -155,6 +155,7 @@ class ai_match(object):
         msg = ''
         psq = []
         status = 0
+        result = endby = 0
         for i in xrange(len(self.opening), self.board_size**2):
             if self.rule == 4 and i >= self.board_size**2 - 25:
                 break
