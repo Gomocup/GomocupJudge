@@ -704,7 +704,8 @@ def connect_addr(addr, trecv, conn):
 def disconnect_addr(addr):
     outstr = 'Client ' + addr + ' disconnected.'
     print_log(outstr)
-    del trecvs[addr]
+    if trecvs.has_key(addr):
+        del trecvs[addr]
 
 def recv_client(conn, addr):
     while True:
