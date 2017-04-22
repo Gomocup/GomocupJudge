@@ -530,7 +530,8 @@ class Client_state:
         else:
             fpos.write(extend_pos(pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
         fpos.close()
-        ftp_upload(pos_path, False)
+        if upload_offline_result:
+            ftp_upload(pos_path, False)
         fmessage = open(result_path + slash + 'message.txt', 'a')
         fmessage.write(message)
         fmessage.write('\n--> ' + pos_path + '\n\n')
@@ -975,9 +976,17 @@ if __name__ == "__main__":
     else:
         real_time_message = False
     try:
-        upload_ratio = string.atof(tournament[upload_ratio])
+        upload_ratio = string.atof(tournament['upload_ratio'])
     except:
         upload_ratio = 1.0
+    try:
+        upload_offline_result = string.atoi(tournament['upload_offline_result'])
+        if upload_offline_result == 1:
+            upload_offline_result = True
+        else:
+            upload_offline_result = False
+    except:
+        upload_offline_result = True
     remote_name = tournament['remote']
     if remote_name:
         remote_file = curpath + slash + 'remote' + slash + remote_name + '.txt'
