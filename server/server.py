@@ -688,9 +688,9 @@ class Client_state:
 def print_log(outstr, file = None):
     curtime = time.time()
     strdate = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(curtime))
-    outstring = '[' + strdate + ']' + ' ' + outstr
-    print outstring
+    outstring = '[' + strdate + ']' + ' ' + outstr    
     if not file:
+        print outstring
         file = log_file
     fout = open(file, 'a')
     fout.write(outstring)
