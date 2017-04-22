@@ -166,9 +166,13 @@ class ai_match(object):
                 psqturn = [(x,y,int(t))]
                 msg += msgturn
                 psq += psqturn
+                if len(psq) >= 3:
+                    _psqturn = [(x,y,int(t)-psq[len(psq)-3][2])]
+                else:
+                    _psqturn = [(x,y,int(t))]
                 status = self.make_move(x, y, i%2+1)
                 if "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
-                    self.settings["send"]("pos " + psq_to_psq(psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
+                    self.settings["send"]("pos " + psq_to_psq(_psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
                     self.settings["recv"](16) #received
                 if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
                     self.settings["send"]("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
