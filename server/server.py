@@ -717,6 +717,8 @@ def recv_client(conn, addr):
                 disconnect_addr(addr)
                 return
             input_queue.put((addr, data))
+            out_str = repr(('input', addr, data))
+            print_log(out_str, net_log_file)
         except:
             disconnect_addr(addr)
             if clients_state.has_key(addr):
@@ -731,6 +733,8 @@ def recv_client(conn, addr):
 def output_client():
     while(True):    
         addr, outstr = output_queue.get()
+        out_str = repr(('output', addr, outstr))
+        print_log(out_str, net_log_file)
         if trecvs.has_key(addr):
             conn = trecvs[addr][1]
             conn.sendall(outstr)
@@ -749,6 +753,8 @@ def accept_client(host, port):
         trecv.start()
         clients_state[addr] = Client_state(curpath, addr)
         input_queue.put((addr, 'connected'))
+        out_str = repr(('input', addr, 'connected'))
+        print_log(out_str, net_log_file)
     conn.close()
 
 def check_end():
@@ -1012,6 +1018,7 @@ if __name__ == "__main__":
     else:
         os.makedirs(result_dir)
     log_file = result_dir + slash + 'log.txt'
+    com_log_file = result_dir + slash + 'com_log.txt'
     state_file = result_dir + slash + 'state.txt'
     result_file = result_dir + slash + 'result.txt'
     message_file = result_dir + slash + 'message.txt'
