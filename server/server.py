@@ -530,7 +530,8 @@ class Client_state:
         else:
             fpos.write(extend_pos(pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
         fpos.close()
-        ftp_upload(pos_path, False)
+        if upload_offline_result:
+            ftp_upload(pos_path, False)
         fmessage = open(result_path + slash + 'message.txt', 'a')
         fmessage.write(message)
         fmessage.write('\n--> ' + pos_path + '\n\n')
@@ -716,6 +717,8 @@ def recv_client(conn, addr):
                 disconnect_addr(addr)
                 return
             input_queue.put((addr, data))
+            out_str = repr(('input', addr, data))
+            print_log(out_str, net_log_file)
         except:
             disconnect_addr(addr)
             if clients_state.has_key(addr):
@@ -730,6 +733,8 @@ def recv_client(conn, addr):
 def output_client():
     while(True):    
         addr, outstr = output_queue.get()
+        out_str = repr(('output', addr, outstr))
+        print_log(out_str, net_log_file)
         if trecvs.has_key(addr):
             conn = trecvs[addr][1]
             conn.sendall(outstr)
@@ -748,6 +753,8 @@ def accept_client(host, port):
         trecv.start()
         clients_state[addr] = Client_state(curpath, addr)
         input_queue.put((addr, 'connected'))
+        out_str = repr(('input', addr, 'connected'))
+        print_log(out_str, net_log_file)
     conn.close()
 
 def check_end():
@@ -975,9 +982,17 @@ if __name__ == "__main__":
     else:
         real_time_message = False
     try:
-        upload_ratio = string.atof(tournament[upload_ratio])
+        upload_ratio = string.atof(tournament['upload_ratio'])
     except:
         upload_ratio = 1.0
+    try:
+        upload_offline_result = string.atoi(tournament['upload_offline_result'])
+        if upload_offline_result == 1:
+            upload_offline_result = True
+        else:
+            upload_offline_result = False
+    except:
+        upload_offline_result = True
     remote_name = tournament['remote']
     if remote_name:
         remote_file = curpath + slash + 'remote' + slash + remote_name + '.txt'
@@ -1003,6 +1018,7 @@ if __name__ == "__main__":
     else:
         os.makedirs(result_dir)
     log_file = result_dir + slash + 'log.txt'
+    com_log_file = result_dir + slash + 'com_log.txt'
     state_file = result_dir + slash + 'state.txt'
     result_file = result_dir + slash + 'result.txt'
     message_file = result_dir + slash + 'message.txt'
