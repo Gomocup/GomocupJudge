@@ -610,7 +610,8 @@ class Client_state:
         else:
             fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
         fpos.close()
-        ftp_upload(pos_path, True)
+        if random.random() < upload_ratio:
+            ftp_upload(pos_path, True)
         
     def save_message(self, message):
         message = base64.b64decode(message)
@@ -729,10 +730,11 @@ def recv_client(conn, addr):
 def output_client():
     while(True):    
         addr, outstr = output_queue.get()
-        conn = trecvs[addr][1]
-        conn.sendall(outstr)
-        if outstr == "end":
-            disconnect_addr(addr)
+        if trecvs.has_key(addr):
+            conn = trecvs[addr][1]
+            conn.sendall(outstr)
+            if outstr == "end":
+                disconnect_addr(addr)
 
 def accept_client(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -972,6 +974,10 @@ if __name__ == "__main__":
         real_time_message = True
     else:
         real_time_message = False
+    try:
+        upload_ratio = string.atof(tournament[upload_ratio])
+    except:
+        upload_ratio = 1.0
     remote_name = tournament['remote']
     if remote_name:
         remote_file = curpath + slash + 'remote' + slash + remote_name + '.txt'
