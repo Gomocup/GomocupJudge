@@ -1080,6 +1080,7 @@ if __name__ == "__main__":
         elif sinstr[0].lower() == 'ok':
             if cur_client.ask == 'match':
                 cur_client.started == True
+                cur_client.save_pos('')
             elif cur_client.ask == 'real_time_pos':
                 cur_client.sent_real_time_pos = True
                 cur_client.process(output_queue)
