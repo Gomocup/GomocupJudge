@@ -11,10 +11,11 @@ from ai_match import ai_match
 from utility import *
 
 class client(object):
-    def __init__(self, host, port, working_dir):
+    def __init__(self, host, port, working_dir, debug):
         self.host = host
         self.port = port
         self.working_dir = working_dir
+        self.debug = debug
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((self.host, self.port))
         self.engine_dir = os.path.join(self.working_dir, "engine")
@@ -38,7 +39,8 @@ class client(object):
         self.settings["real_time_message"] = 0
         #self.settings["allow pondering"] = 0
         #self.settings[""] = 0
-        self.settings["socket"] = self.client_socket
+        self.settings["send"] = self.send
+        self.settings["recv"] = self.recv
         self.display_info()
 
     def display_info(self):
@@ -52,10 +54,28 @@ class client(object):
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
+
+    def debug_log(self, log):
+        try:
+            self.debugfile
+        except:
+            self.debugfile = open(os.path.join(self.working_dir, "log.txt"), "a")
+            self.debugfile.write("~~~~~~~~~~ log ~~~~~~~~~~\n")
+        self.debugfile.write(log)
+        self.debugfile.flush()
+
+    def send(self, msg):
+        self.debug_log("send: " + msg + "\n")
+        self.client_socket.send(msg)
+
+    def recv(self, size):
+        buf = self.client_socket.recv(size)
+        self.debug_log("recv("+str(size)+"): " + buf + "\n")
+        return buf
     
     def listen(self):
         while True:
-            buf = self.client_socket.recv(16*1024*1024)
+            buf = self.recv(16*1024*1024)
             #print '\"' + buf + '\"'
             #sys.stdout.flush()
             if buf.lower().startswith("engine exist"):
@@ -65,7 +85,7 @@ class client(object):
                     if engine[1] == md5:
                         exist = True
                         break
-                self.client_socket.send("yes" if exist else "no")
+                self.send("yes" if exist else "no")
             elif buf.lower().startswith("engine send"):
                 base64fname, base64engine = buf.strip().split(' ')[-2:]
                 fname = base64fname.decode('base64')
@@ -73,7 +93,7 @@ class client(object):
                 with open(os.path.join(self.engine_dir, fname), "wb") as f:
                     f.write(engine)
                 self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
-                self.client_socket.send("received")
+                self.send("received")
             elif buf.lower().startswith("match new"):
                 buf = buf.strip().split(' ')[2:]
                 md5_1 = buf[0]
@@ -89,7 +109,7 @@ class client(object):
                     game_type = int(buf[9])
                 else:
                     game_type = 3
-                self.client_socket.send("ok")
+                self.send("ok")
 
                 for engine in self.engine:
                     if engine[1] == md5_1 or engine[1] == md5_2:
@@ -162,27 +182,27 @@ class client(object):
                 #print msg, psq
                 print result, endby
                 
-                self.client_socket.send("match finished " + psq_to_psq(psq, board_size).encode("base64").replace("\n", "").replace("\r", "") + \
+                self.send("match finished " + psq_to_psq(psq, board_size).encode("base64").replace("\n", "").replace("\r", "") + \
                                         " " + msg.encode("base64").replace("\n", "").replace("\r", "") + " " + str(result) + " " + str(endby))
-                self.client_socket.recv(16) #received
+                self.recv(16) #received
                 
             elif buf.lower().startswith("set real_time_pos"):
                 self.settings["real_time_pos"] = int(buf.strip().split()[-1])
-                self.client_socket.send("ok")
+                self.send("ok")
             elif buf.lower().startswith("set real_time_message"):
                 self.settings["real_time_message"] = int(buf.strip().split()[-1])
-                self.client_socket.send("ok")
+                self.send("ok")
             elif buf.lower().startswith("pause"):
                 #TODO
-                self.client_socket.send("ok")
+                self.send("ok")
             elif buf.lower().startswith("continue"):
                 #TODO
-                self.client_socket.send("ok")
+                self.send("ok")
             elif buf.lower().startswith("terminate"):
                 #TODO
-                self.client_socket.send("ok")
+                self.send("ok")
             else:
-                self.client_socket.send("unknown command")
+                self.send("unknown command")
                 continue
 
 def main():
@@ -191,10 +211,11 @@ def main():
     parser.add_argument("--host", dest="host", action="store", required=True)
     parser.add_argument("--port", dest="port", action="store", required=True)
     parser.add_argument("--dir", dest="working_dir", action="store", required=True)
+    parser.add_argument("--debug", dest="debug", action="store", default=False, required=False)
     
     args = parser.parse_args()
 
-    client(host=args.host, port=int(args.port), working_dir = args.working_dir).listen()
+    client(host=args.host, port=int(args.port), working_dir = args.working_dir, debug = args.debug).listen()
 
 
 if __name__ == '__main__':
