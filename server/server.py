@@ -718,9 +718,11 @@ def recv_client(conn, addr):
                 disconnect_addr(addr)
                 return
             if recv_mutex.acquire():
-                recv_str = recv_str + data
-                sdata = recv_str.split('\n')
-                recv_str = sdata[-1]
+                if not recv_str.has_key(addr):
+                    recv_str[addr] = ''
+                recv_str[addr] = recv_str[addr] + data
+                sdata = recv_str[addr].split('\n')
+                recv_str[addr] = sdata[-1]
                 sdata = sdata[:-1]
                 for edata in sdata:
                     input_queue.put((addr, edata))
@@ -966,7 +968,7 @@ if __name__ == "__main__":
     else:
         slash = '/'
 
-    recv_str = ''
+    recv_str = {}
     recv_mutex = threading.Lock()
     tournament_name = sys.argv[1]
     tournament_file = curpath + slash + 'tournament' + slash + tournament_name + '.txt'
@@ -1078,6 +1080,7 @@ if __name__ == "__main__":
         elif sinstr[0].lower() == 'ok':
             if cur_client.ask == 'match':
                 cur_client.started == True
+                cur_client.save_pos('')
             elif cur_client.ask == 'real_time_pos':
                 cur_client.sent_real_time_pos = True
                 cur_client.process(output_queue)
