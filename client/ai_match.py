@@ -145,7 +145,7 @@ class ai_match(object):
                 if _y<0 or _y>=self.board_size: break
                 if self.board[_x][_y] != self.board[x][y]: break
                 c += 1
-            if self.rule == 0 and c >= 5:
+            if (self.rule == 0 or self.rule == 4) and c >= 5:
                 return 1
             if self.rule == 1 and c == 5:
                 return 1
