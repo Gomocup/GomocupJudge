@@ -171,7 +171,11 @@ class ai_match(object):
                 else:
                     _psqturn = [(x,y,int(t))]
                 status = self.make_move(x, y, i%2+1)
-                if "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
+                if status == -2:
+                    msgturn = msgturn + "Forbidden move (" + str(x) + "," + str(y) + ")\n"
+                    msg[-1] = msgturn
+                    psq = psq[:-1]
+                if status != -2 and "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
                     self.settings["send"]("pos " + psq_to_psq(_psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
                     self.settings["recv"](16) #received
                 if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
