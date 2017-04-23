@@ -130,7 +130,7 @@ class ai_match(object):
         for d in range(4):
             c = 1
             _x, _y = x, y
-            for i in range(1,5):
+            for i in range(1,6):
                 _x += nx[d]
                 _y += ny[d]
                 if _x<0 or _x>=self.board_size: break
@@ -138,7 +138,7 @@ class ai_match(object):
                 if self.board[_x][_y] != self.board[x][y]: break
                 c += 1
             _x, _y = x, y
-            for i in range(1,5):
+            for i in range(1,6):
                 _x -= nx[d]
                 _y -= ny[d]
                 if _x<0 or _x>=self.board_size: break
