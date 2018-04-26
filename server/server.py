@@ -931,21 +931,15 @@ def ssh_upload_process():
     if remote_info:
         while True:
             upfile, is_online = ftp_queue.get()
-            file = None
             try:
-                bufsize = 1024
-                file = open(upfile, 'rb')
                 if is_online:
                     r_path = remote_info[3]
                 else:
                     r_path = remote_info[4]
                 if not r_path[-1] == '/':
                     r_path = r_path + '/'
-                sftp.put(r_path + upfile.split(slash)[-1], file)
-                file.close()
+                sftp.put(upfile, r_path + upfile.split(slash)[-1])
             except:
-                if file:
-                    file.close()
                 ftp_queue.put_to_head((upfile, is_online))
     
 def ssh_quit():
@@ -1015,7 +1009,7 @@ if __name__ == "__main__":
         remote_path = remote['remotepath']
         if not remote_path[-1] == '/':
             remote_path = remote_path + '/'
-        remote_online_path = remote_path + 'Online/'
+        remote_online_path = remote_path + '/'
         remote_tur_path = remote_path + tur_name + '/'
         remote_info = (remote_host, remote_username, remote_password, remote_online_path, remote_tur_path)
     else:
