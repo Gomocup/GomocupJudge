@@ -513,7 +513,8 @@ class Client_state:
         pos = base64.b64decode(pos)
         pos = opening_pos2psq(self.match.opening) + pos
         message = base64.b64decode(message)
-        result = string.atoi(result)
+        result_raw = string.atoi(result)
+        result = result_raw
         if result > 0:
             if opening_reverse(self.match.opening):
                 result = 3 - result
@@ -522,7 +523,7 @@ class Client_state:
         player1 = self.match.player1
         player2 = self.match.player2
         tur_name = self.match.tur_name
-        pos_name = str(round) + '_' + str(player1[0]) + '_' + str(player2[0]) + '.psq'
+        pos_name = str(round) + '_' + str(player1[0]) + '_' + str(player2[0]) + '_' + str(result_raw) + '.psq'
         result_path = self.curpath + slash + 'result' + slash + tur_name
         pos_path = result_path + slash + pos_name
         fpos = open(pos_path, 'w')
@@ -598,7 +599,7 @@ class Client_state:
             self.cur_pos = opening_pos2psq(self.match.opening) + pos
         else:
             self.cur_pos = self.cur_pos + pos
-        pos_name = self.addr.replace('.', '_').replace(':', '_') + '.psq'
+        pos_name = self.addr.replace('.', '_').replace(':', '_') + '_' + self.match.tur_name + '.psq'
         tmp_path = self.curpath + slash + 'result' + slash + 'tmp'
         if os.path.exists(tmp_path):
             if not os.path.isdir(tmp_path):
