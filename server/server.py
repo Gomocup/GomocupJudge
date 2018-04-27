@@ -106,6 +106,9 @@ class Tournament:
         self.curpath = curpath
         self.enginepath = curpath + slash + 'engine'
         self.engines = engines
+        self.short_engines = self.get_short_engines(3)
+        print self.engines
+        print self.short_engines
         self.md5s = []
         for engine in self.engines:
             self.md5s.append(get_md5(curpath, engine))
@@ -166,6 +169,53 @@ class Tournament:
         self.statistics()
         self.print_table()
         self.print_statistics()
+        
+    def get_short_engines(self, len_name):
+        engines = self.engines[:]
+        for i in range(len(engines)):
+            engines[i] = engines[i].rsplit('.', 1)[0]
+        short_engines = {}
+        for engine in engines:
+            if len(engine) >= len_name:
+                short_engines[engine] = (engine[:len_name], len_name - 1)
+            else:
+                short_engines[engine] = (engine, len(engine) - 1)
+        while True:
+            revert_map = {}
+            for engine, short_engine in short_engines.iteritems():
+                short_engine, pos = short_engine
+                if not revert_map.has_key(short_engine):
+                    revert_map[short_engine] = []
+                revert_map[short_engine].append((engine, pos))
+            flag = False
+            for short_engine, engines in revert_map.iteritems():
+                if len(engines) >= 2:
+                    for engine, pos in engines:
+                        if pos < len(engine) - 1:
+                            flag = True
+            if not flag:
+                break
+            for short_engine, engines in revert_map.iteritems():
+                minpos = 1024
+                maxpos = -1
+                for engine, pos in engines:
+                    minpos = min(minpos, pos)
+                    maxpos = max(maxpos, pos)
+            flag = False
+            for short_engine, engines in revert_map.iteritems():
+                if len(engines) <= 1:
+                    continue
+                for engine, pos in engines:
+                    if pos < len(engine) - 1 and (pos > minpos or minpos == maxpos):
+                        pos += 1
+                        short_engines[engine] = (engine[:len_name - 1] + engine[pos], pos)
+                        flag = True
+            if not flag:
+                break
+        ret_short_engines = {}
+        for engine, short_engine in short_engines.iteritems():
+            ret_short_engines[engine] = short_engine[0]
+        return ret_short_engines
     
     def statistics(self):
         self.times = [0 for i in range(self.nengines)]
@@ -307,7 +357,8 @@ class Tournament:
         for engine_id, rating, engine_name, rating_m in self.ratings:
             cur_rank += 1
             cur_name = engine_name
-            short_name = cur_name[:min(3, len(cur_name))]
+            short_name = self.short_engines[cur_name]
+            #short_name = cur_name[:min(3, len(cur_name))]
             fout.write("<TH><NUM>" + str(cur_rank) + "</NUM><BR/><NAME>" + short_name + "<NAME></TH>")
         fout.write("</TR>\n")
         cur_rank = 0
