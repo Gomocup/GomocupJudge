@@ -401,7 +401,7 @@ class Tournament:
             fout.write('losses: ' + str(self.losses[engine_id][0]) + '+' + str(self.losses[engine_id][1]) + ', ')
             fout.write('draws: ' + str(self.draws[engine_id][0]) + '+' + str(self.draws[engine_id][1]) + '\n')
             fout.write('    timeouts: ' + str(self.timeouts[engine_id]) + ', ' + 'errors: ' + str(self.crashes[engine_id]) + ', ' + 'total games: ' + str(self.games[engine_id]) + '\n')
-            fout.write('    time/game: ' + soft_div(self.times[engine_id], self.games[engine_id], 's') + ', ' + 'time/turn: ' + soft_div(self.times[engine_id] * 1000, self.moves[engine_id], 'ms') + ', ' + 'move/game: ' + soft_div(self.moves[engine_id], self.games[engine_id], '') + '\n')
+            fout.write('    time/game: ' + soft_div(self.times[engine_id], self.games[engine_id]*1000, 's') + ', ' + 'time/turn: ' + soft_div(self.times[engine_id], self.moves[engine_id], 'ms') + ', ' + 'move/game: ' + soft_div(self.moves[engine_id], self.games[engine_id], '') + '\n')
             fout.write('\n')
         fout.close()
         ssh_upload(result_path + slash + "_result.txt", False)
@@ -513,8 +513,6 @@ def parse_pos(pos, opening):
     times2 = times[1::2]
     time1 = sum(times1)
     time2 = sum(times2)
-    #time1 = 0 if len(times1) == 0 else times1[-1]
-    #time2 = 0 if len(times2) == 0 else times2[-1]
     move1 = len(times1)
     move2 = len(times2)
     return (time1, time2, move1, move2)
