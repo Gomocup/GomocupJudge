@@ -511,8 +511,8 @@ def parse_pos(pos, opening):
     len_times = len(times)
     times1 = times[0::2]
     times2 = times[1::2]
-    time1 = sum(times1)
-    time2 = sum(times2)
+    time1 = 0 if len(times1) == 0 else times1[-1]
+    time2 = 0 if len(times2) == 0 else times2[-1]
     move1 = len(times1)
     move2 = len(times2)
     return (time1, time2, move1, move2)
