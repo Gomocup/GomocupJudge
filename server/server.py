@@ -413,6 +413,8 @@ class Tournament:
                 inv_ratings[engine_id] = (rating, rating_m)
             else:
                 inv_ratings[engine_id] = (0, random.randint(0, 100))
+            if "placeholder" in engine_id.lower():
+                inv_ratings[engine_id] = (1000000, 1000000)
         minelo = None
         minind = -1
         for i in range(self.nmatches):
