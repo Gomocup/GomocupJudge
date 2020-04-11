@@ -4,6 +4,7 @@ import sys
 from threading import Thread
 from queue import Queue, Empty
 import time
+import json
 
 global_timeout = 0.1
 global_retry = 10
@@ -147,18 +148,30 @@ class server(object):
                 self.msgstamp += 1
             self.send()
             
-            
+
 def main():
-    parser = argparse.ArgumentParser(description='Gomocup Experimental Tournament Server')
-
-    parser.add_argument("--host", dest="host", action="store", required=True)
-    parser.add_argument("--port", dest="port", action="store", required=True)
-    parser.add_argument("--key", dest="key", action="store", required=True)
-
-    args = parser.parse_args()
-    
-    server(host=args.host, port=int(args.port), key=args.key).listen()
+    fn = sys.argv[0]
+    while len(fn) > 0 and fn[-1] not in "\\/":
+        fn = fn[:-1]
+    fn += "config.json"
+    try:
+        with open(fn, "r", encoding='utf8') as f:
+            config = json.load(f)
+    except:
+        config = {}
+        parser = argparse.ArgumentParser(description='Gomocup Experimental Tournament Server')
+        parser.add_argument("--host", dest="host", action="store", required=True)
+        parser.add_argument("--port", dest="port", action="store", required=True)
+        parser.add_argument("--key", dest="key", action="store", required=True)
+        args = parser.parse_args()
+        config["host"] = args.host
+        config["port"] = args.port
+        config["key"] = args.key
+        with open(fn, "w", encoding='utf8') as f:
+            json.dump(config, f, indent=2)
             
+    server(host=config["host"], port=int(config["port"]), key=config["key"]).listen()
+    
 if __name__ == '__main__':
     main()
 
