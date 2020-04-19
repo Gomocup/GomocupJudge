@@ -193,8 +193,10 @@ class ai_match(object):
                             self.board_2[y[j][0]][y[j][1]] = (j+1, (j+1) % 2 + 1)
                             self.board[y[j][0]][y[j][1]] = j % 2 + 1
                             self.opening += [y[j]]
+                            psq += [(y[j][0],y[j][1],0)]
                         else:
                             status = -1
+                    msg += '(1) (2) (3) ' + _msg + str(int(t)) + 'ms\n'
                 assert(status == 0)
                 
                 i = 1
@@ -213,11 +215,13 @@ class ai_match(object):
                 t = self.engine_1.timeused
                 print x,y,t
                 if len(y) == 0: #swap
-                    pass
+                    msg += '(3-swap) ' + _msg + str(int(t)) + 'ms\n'
                 elif len(y) == 1: #stay with its color
                     if self.board[y[0][0]][y[0][1]] == 0:
                         self.board[y[0][0]][y[0][1]] = 2
                         self.opening += [y[0]]
+                        msg += '(3-stay with its color) (4) ' + _msg + str(int(t)) + 'ms\n'
+                        psq += [(y[0][0],y[0][1],0)]
                     else:
                         status = -1
                 elif len(y) == 2: #put two stones
@@ -225,20 +229,25 @@ class ai_match(object):
                     for j in range(len(y)):
                         if self.board[y[j][0]][y[j][1]] == 0:
                             self.board_2[y[j][0]][y[j][1]] = (j+4, j % 2 + 1)
-                            self.board[y[j][0]][y[j][1]] = j % 2 + 1
+                            self.board[y[j][0]][y[j][1]] = (j+1) % 2 + 1
                             self.opening += [y[j]]
+                            psq += [(y[j][0],y[j][1],0)]
                         else:
                             status = -1
+                    msg += '(3-put two stones) (4) (5) ' + _msg + str(int(t)) + 'ms\n'
                     self.engine_1.init_board(self.board_2)
                     _msg, x, y = self.engine_1.swap2board()
                     t = self.engine_1.timeused
                     print x,y,t
+                    self.engine_1, self.engine_2 = self.engine_2, self.engine_1
                     if len(y) == 0: #swap
-                        pass
+                        msg += '(5-swap) ' + _msg + str(int(t)) + 'ms\n'
                     elif len(y) == 1: #stay with its color
                         if self.board[y[0][0]][y[0][1]] == 0:
                             self.board[y[0][0]][y[0][1]] = 2
                             self.opening += [y[0]]
+                            msg += '(5-stay with its color) (6) ' + _msg + str(int(t)) + 'ms\n'
+                            psq += [(y[0][0],y[0][1],0)]
                         else:
                             status = -1
                     else:
@@ -266,6 +275,14 @@ class ai_match(object):
                     endby = 2 #timeout
 
         if status == 0:
+            if "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
+                for i in xrange(len(psq)):
+                    self.settings["send"]("pos " + psq_to_psq([psq[i]], self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
+                    self.settings["recv"](16) #received
+            if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
+                self.settings["send"]("message " + msg.encode("base64").replace("\n", "").replace("\r", ""))
+                self.settings["recv"](16) #received
+                
             for i in xrange(len(self.opening), self.board_size**2):
                 if self.rule == 4 and i >= self.board_size**2 - 25:
                     break
