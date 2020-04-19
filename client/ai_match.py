@@ -25,7 +25,8 @@ class ai_match(object):
                  working_dir_1 = "./",
                  working_dir_2 = "./",
                  tolerance = 1000,
-                 settings = {}):
+                 settings = {},
+                 special_rule = ""):
         self.board_size = board_size
         self.opening = opening
         self.cmd_1 = cmd_1
@@ -46,6 +47,9 @@ class ai_match(object):
         self.working_dir_2 = working_dir_2
         self.tolerance = tolerance
         self.settings = settings
+        self.special_rule = special_rule
+        self.engine_1 = None
+        self.engine_2 = None
         
         self.board = [[0 for i in xrange(self.board_size)] for j in xrange(self.board_size)]
         for i in xrange(len(self.opening)):
@@ -68,32 +72,39 @@ class ai_match(object):
                 else:
                     self.board_1[x][y] = (i+1, 2)
                     self.board_2[x][y] = (i+1, 1)
+
+            if self.engine_1 is None:
+                self.engine_1 = self.init_protocol(self.cmd_1,
+                                              self.protocol_1,
+                                              self.board_1,
+                                              self.timeout_turn_1,
+                                              self.timeout_match_1,
+                                              self.max_memory_1,
+                                              self.game_type,
+                                              self.rule,
+                                              self.folder_1,
+                                              self.working_dir_1,
+                                              self.tolerance)
+            else:
+                self.engine_1.init_board(self.board_1)
                 
-            self.engine_1 = self.init_protocol(self.cmd_1,
-                                          self.protocol_1,
-                                          self.board_1,
-                                          self.timeout_turn_1,
-                                          self.timeout_match_1,
-                                          self.max_memory_1,
-                                          self.game_type,
-                                          self.rule,
-                                          self.folder_1,
-                                          self.working_dir_1,
-                                          self.tolerance)
             msg, x, y = self.engine_1.start()
             t = self.engine_1.timeused
         elif self.move_num == 1:
-            self.engine_2 = self.init_protocol(self.cmd_2,
-                                          self.protocol_2,
-                                          self.board_2,
-                                          self.timeout_turn_2,
-                                          self.timeout_match_2,
-                                          self.max_memory_2,
-                                          self.game_type,
-                                          self.rule,
-                                          self.folder_2,
-                                          self.working_dir_2,
-                                          self.tolerance)
+            if self.engine_2 is None:
+                self.engine_2 = self.init_protocol(self.cmd_2,
+                                              self.protocol_2,
+                                              self.board_2,
+                                              self.timeout_turn_2,
+                                              self.timeout_match_2,
+                                              self.max_memory_2,
+                                              self.game_type,
+                                              self.rule,
+                                              self.folder_2,
+                                              self.working_dir_2,
+                                              self.tolerance)
+            else:
+                self.engine_2.init_board(self.board_2)
             msg, x, y = self.engine_2.start()
             t = self.engine_2.timeused
         else:
@@ -156,31 +167,86 @@ class ai_match(object):
         psq = []
         status = 0
         result = endby = 0
-        for i in xrange(len(self.opening), self.board_size**2):
-            if self.rule == 4 and i >= self.board_size**2 - 25:
-                break
+
+        if self.special_rule == "swap2":
             try:
-                _msg, x, y, t = self.next_move()
+                i = 0
+                self.engine_1 = self.init_protocol(self.cmd_1,
+                                              self.protocol_1,
+                                              self.board_1,
+                                              self.timeout_turn_1,
+                                              self.timeout_match_1,
+                                              self.max_memory_1,
+                                              self.game_type,
+                                              self.rule,
+                                              self.folder_1,
+                                              self.working_dir_1,
+                                              self.tolerance)
+                _msg, x, y = self.engine_1.swap2board()
+                t = self.engine_1.timeused
                 print x,y,t
-                msgturn = '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
-                psqturn = [(x,y,int(t))]
-                msg += msgturn
-                psq += psqturn
-                if len(psq) >= 3:
-                    _psqturn = [(x,y,int(t)-psq[len(psq)-3][2])]
+                if len(y) != 3:
+                    status = -1
                 else:
-                    _psqturn = [(x,y,int(t))]
-                status = self.make_move(x, y, i%2+1)
-                if status == -2:
-                    msgturn = msgturn + "Forbidden move!\n"
-                    msg += "Forbidden move!\n"
-                    psq = psq[:-1]
-                if status != -2 and "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
-                    self.settings["send"]("pos " + psq_to_psq(_psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
-                    self.settings["recv"](16) #received
-                if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
-                    self.settings["send"]("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
-                    self.settings["recv"](16) #received
+                    for j in range(len(y)):
+                        if self.board[y[j][0]][y[j][1]] == 0:
+                            self.board_2[y[j][0]][y[j][1]] = (j+1, (j+1) % 2 + 1)
+                            self.board[y[j][0]][y[j][1]] = j % 2 + 1
+                            self.opening += [y[j]]
+                        else:
+                            status = -1
+                assert(status == 0)
+                
+                i = 1
+                self.engine_2 = self.init_protocol(self.cmd_2,
+                                              self.protocol_2,
+                                              self.board_2,
+                                              self.timeout_turn_2,
+                                              self.timeout_match_2,
+                                              self.max_memory_2,
+                                              self.game_type,
+                                              self.rule,
+                                              self.folder_2,
+                                              self.working_dir_2,
+                                              self.tolerance)
+                _msg, x, y = self.engine_2.swap2board()
+                t = self.engine_1.timeused
+                print x,y,t
+                if len(y) == 0: #swap
+                    pass
+                elif len(y) == 1: #stay with its color
+                    if self.board[y[0][0]][y[0][1]] == 0:
+                        self.board[y[0][0]][y[0][1]] = 2
+                        self.opening += [y[0]]
+                    else:
+                        status = -1
+                elif len(y) == 2: #put two stones
+                    i = 2
+                    for j in range(len(y)):
+                        if self.board[y[j][0]][y[j][1]] == 0:
+                            self.board_2[y[j][0]][y[j][1]] = (j+4, j % 2 + 1)
+                            self.board[y[j][0]][y[j][1]] = j % 2 + 1
+                            self.opening += [y[j]]
+                        else:
+                            status = -1
+                    self.engine_1.init_board(self.board_2)
+                    _msg, x, y = self.engine_1.swap2board()
+                    t = self.engine_1.timeused
+                    print x,y,t
+                    if len(y) == 0: #swap
+                        pass
+                    elif len(y) == 1: #stay with its color
+                        if self.board[y[0][0]][y[0][1]] == 0:
+                            self.board[y[0][0]][y[0][1]] = 2
+                            self.opening += [y[0]]
+                        else:
+                            status = -1
+                    else:
+                        status = -1
+                else:
+                    status = -1
+                assert(status == 0)
+                
             except Exception("TLE"):
                 status = -4
             except Exception("MLE"):
@@ -191,20 +257,64 @@ class ai_match(object):
                 status = -3
 
             if status != 0:
-                if status == 1:
-                    result = i % 2 + 1
-                    endby = 0 #draw/five
-                else:
-                    result = (i+1) % 2 + 1
-                    if status == -1:
-                        endby = 3 #illegal coordinate
-                    elif status == -2:
-                        endby = 1 #foul
-                    elif status == -3:
-                        endby = 4 #crash
-                    elif status == -4:
-                        endby = 2 #timeout
-                break
+                result = (i+1) % 2 + 1
+                if status == -1:
+                    endby = 3 #illegal coordinate
+                elif status == -3:
+                    endby = 4 #crash
+                elif status == -4:
+                    endby = 2 #timeout
+
+        if status == 0:
+            for i in xrange(len(self.opening), self.board_size**2):
+                if self.rule == 4 and i >= self.board_size**2 - 25:
+                    break
+                try:
+                    _msg, x, y, t = self.next_move()
+                    print x,y,t
+                    msgturn = '('+str(i+1)+') ' + _msg + str(int(t)) + 'ms\n'
+                    psqturn = [(x,y,int(t))]
+                    msg += msgturn
+                    psq += psqturn
+                    if len(psq) >= 3:
+                        _psqturn = [(x,y,int(t)-psq[len(psq)-3][2])]
+                    else:
+                        _psqturn = [(x,y,int(t))]
+                    status = self.make_move(x, y, i%2+1)
+                    if status == -2:
+                        msgturn = msgturn + "Forbidden move!\n"
+                        msg += "Forbidden move!\n"
+                        psq = psq[:-1]
+                    if status != -2 and "real_time_pos" in self.settings and self.settings["real_time_pos"] == 1:
+                        self.settings["send"]("pos " + psq_to_psq(_psqturn, self.board_size).encode("base64").replace("\n", "").replace("\r", ""))
+                        self.settings["recv"](16) #received
+                    if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
+                        self.settings["send"]("message " + msgturn.encode("base64").replace("\n", "").replace("\r", ""))
+                        self.settings["recv"](16) #received
+                except Exception("TLE"):
+                    status = -4
+                except Exception("MLE"):
+                    status = -3
+                except Exception("FLE"):
+                    status = -3
+                except:
+                    status = -3
+
+                if status != 0:
+                    if status == 1:
+                        result = i % 2 + 1
+                        endby = 0 #draw/five
+                    else:
+                        result = (i+1) % 2 + 1
+                        if status == -1:
+                            endby = 3 #illegal coordinate
+                        elif status == -2:
+                            endby = 1 #foul
+                        elif status == -3:
+                            endby = 4 #crash
+                        elif status == -4:
+                            endby = 2 #timeout
+                    break
         print endby
         sys.stdout.flush()
         try:

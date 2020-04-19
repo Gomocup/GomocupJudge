@@ -66,6 +66,14 @@ class new_protocol(object):
         self.write_to_process("INFO folder " + str(self.folder) + "\n")
         self.suspend()
 
+    def init_board(self, board):
+        self.board = copy.deepcopy(board)
+        self.piece = {}
+        for i in xrange(len(board)):
+            for j in xrange(len(board[i])):
+                if board[i][j][0] != 0:
+                    self.piece[board[i][j][0]] = (i,j)
+
     def write_to_process(self, msg):
         #print '===>', msg
         #sys.stdout.flush()
@@ -98,7 +106,7 @@ class new_protocol(object):
         except:
             pass
 
-    def wait(self):
+    def wait(self, special_rule = ""):
         self.resume()
         
         msg = ''
@@ -118,8 +126,22 @@ class new_protocol(object):
                     msg += buf
                 else:
                     try:
-                        x, y = buf.split(",")
-                        x, y = int(x), int(y)
+                        if special_rule == "swap2":
+                            if buf.lower().startswith("swap"):
+                                x = -1
+                                y = []
+                            else:
+                                x = -1
+                                y = []
+                                buf = buf.split()
+                                for xy in buf:
+                                    xi, yi = xy.split(",")
+                                    xi, yi = int(xi), int(yi)
+                                    y += [(xi, yi)]
+                                assert(len(y) > 0)
+                        else:
+                            x, y = buf.split(",")
+                            x, y = int(x), int(y)
                         break
                     except:
                         pass
@@ -136,8 +158,9 @@ class new_protocol(object):
         if get_dir_size(self.folder) > 70*1024*1024:
             raise Exception("FLE")
 
-        self.piece[len(self.piece)+1] = (x,y)
-        self.board[x][y] = (len(self.piece), self.color)
+        if special_rule == "":
+            self.piece[len(self.piece)+1] = (x,y)
+            self.board[x][y] = (len(self.piece), self.color)
         return msg, x, y
         
     def turn(self, x, y):
@@ -157,6 +180,15 @@ class new_protocol(object):
         self.write_to_process("DONE\n")
 
         return self.wait()
+
+    def swap2board(self):
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
+        self.write_to_process("SWAP2BOARD\n")
+        for i in xrange(1, len(self.piece)+1):
+            self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + "\n")
+        self.write_to_process("DONE\n")
+
+        return self.wait(special_rule = "swap2")
 
     def clean(self):
         self.resume()

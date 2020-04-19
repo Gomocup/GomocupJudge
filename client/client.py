@@ -12,11 +12,12 @@ from ai_match import ai_match
 from utility import *
 
 class client(object):
-    def __init__(self, host, port, working_dir, debug):
+    def __init__(self, host, port, working_dir, debug, special_rule):
         self.host = host
         self.port = port
         self.working_dir = working_dir
         self.debug = debug
+        self.special_rule = special_rule
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((self.host, self.port))
         self.engine_dir = os.path.join(self.working_dir, "engine")
@@ -201,7 +202,8 @@ class client(object):
                                 working_dir_1 = os.path.join(self.match_dir, md5_1),
                                 working_dir_2 = os.path.join(self.match_dir, md5_2),
                                 tolerance = tolerance,
-                                settings = self.settings)
+                                settings = self.settings,
+                                special_rule = self.special_rule)
                 msg, psq, result, endby = game.play()
 
                 #print msg, psq
@@ -237,10 +239,11 @@ def main():
     parser.add_argument("--port", dest="port", action="store", required=True)
     parser.add_argument("--dir", dest="working_dir", action="store", required=True)
     parser.add_argument("--debug", dest="debug", action="store", default=False, required=False)
+    parser.add_argument("--rule", dest="special_rule", action="store", default="", required=False)
     
     args = parser.parse_args()
 
-    client(host=args.host, port=int(args.port), working_dir = args.working_dir, debug = args.debug).listen()
+    client(host=args.host, port=int(args.port), working_dir = args.working_dir, debug = args.debug, special_rule = args.special_rule).listen()
 
 
 if __name__ == '__main__':
