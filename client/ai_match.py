@@ -167,6 +167,7 @@ class ai_match(object):
         psq = []
         status = 0
         result = endby = 0
+        posswap = False
 
         if self.special_rule == "swap2":
             try:
@@ -216,6 +217,7 @@ class ai_match(object):
                 print x,y,t
                 if len(y) == 0: #swap
                     msg += '(3-swap) ' + _msg + str(int(t)) + 'ms\n'
+                    posswap = True
                 elif len(y) == 1: #stay with its color
                     if self.board[y[0][0]][y[0][1]] == 0:
                         self.board[y[0][0]][y[0][1]] = 2
@@ -243,6 +245,7 @@ class ai_match(object):
                     if len(y) == 0: #swap
                         msg += '(5-swap) ' + _msg + str(int(t)) + 'ms\n'
                     elif len(y) == 1: #stay with its color
+                        posswap = True
                         if self.board[y[0][0]][y[0][1]] == 0:
                             self.board[y[0][0]][y[0][1]] = 2
                             self.opening += [y[0]]
@@ -282,7 +285,10 @@ class ai_match(object):
             if "real_time_message" in self.settings and self.settings["real_time_message"] == 1:
                 self.settings["send"]("message " + msg.encode("base64").replace("\n", "").replace("\r", ""))
                 self.settings["recv"](16) #received
-                
+            if posswap:
+                self.settings["send"]("pos swap")
+                print "pos swap"
+                self.settings["recv"](16) #received
             for i in xrange(len(self.opening), self.board_size**2):
                 if self.rule == 4 and i >= self.board_size**2 - 25:
                     break
