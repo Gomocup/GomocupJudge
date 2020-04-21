@@ -47,6 +47,7 @@ class Match:
         self.matchid = matchid
         self.player1 = player1
         self.player2 = player2
+        self.swapped = False
         self.round = round    
         self.group_id = (self.player1[0], self.player2[0], self.round)
         self.board_size = board_size
@@ -247,7 +248,7 @@ class Tournament:
                         self.crashes[player2] += 1
                     elif match.result == 2:
                         self.crashes[player1] += 1
-                if not match.reverse:
+                if not match.reverse ^ match.swapped:
                     if match.result == 1:
                         self.wins[player1][0] += 1
                         self.losses[player2][1] += 1
@@ -567,7 +568,7 @@ class Client_state:
         result_raw = string.atoi(result)
         result = result_raw
         if result > 0:
-            if opening_reverse(self.match.opening):
+            if opening_reverse(self.match.opening) ^ self.match.swapped:
                 result = 3 - result
         end_with = string.atoi(end_with)
         round = self.match.round
@@ -578,11 +579,15 @@ class Client_state:
         result_path = self.curpath + slash + 'result' + slash + tur_name
         pos_path = result_path + slash + pos_name
         fpos = open(pos_path, 'w')
-        if not self.match.reverse:
+        if not (self.match.reverse ^ self.match.swapped):
             fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
         else:
             fpos.write(extend_pos(pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
-        fpos.write(str(result) + ',' + self.tournament.tur_name + '\n')
+        if self.match.swapped and result > 0:
+            show_result = 3 - result
+        else:
+            show_result = result
+        fpos.write(str(show_result) + ',' + self.tournament.tur_name + '\n')
         fpos.close()
         if upload_offline_result:
             ssh_upload(pos_path, False)
@@ -660,7 +665,7 @@ class Client_state:
             os.makedirs(tmp_path)
         pos_path = tmp_path + slash + pos_name
         fpos = open(pos_path, 'w')
-        if not self.match.reverse:
+        if not (self.match.reverse ^ self.match.swapped):
             fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
         else:
             fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
@@ -684,7 +689,7 @@ class Client_state:
             os.makedirs(tmp_path)
         message_path = tmp_path + slash + message_name
         fmessage = open(message_path, 'w')
-        fmessage.write(cur_message)
+        fmessage.write(self.cur_message)
         fmessage.close()
         ssh_upload(message_path, True)
     
@@ -715,7 +720,10 @@ class Client_state:
                 else:
                     output_queue.put((self.addr, "set real_time_message 0"))
             elif self.tmp_pos != None:
-                self.save_pos(self.tmp_pos)
+                if tmp_pos.strip() == 'swap':
+                    self.match.swapped = True
+                else:
+                    self.save_pos(self.tmp_pos)
                 self.tmp_pos = None
                 output_queue.put((self.addr, "received"))
             elif self.tmp_message != None:
