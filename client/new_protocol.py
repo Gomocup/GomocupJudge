@@ -153,7 +153,7 @@ class new_protocol(object):
         self.update_vms()
         self.suspend()
 
-        if self.vms_memory > self.max_memory:
+        if self.vms_memory > self.max_memory and self.max_memory != 0:
             raise Exception("MLE")
         if get_dir_size(self.folder) > 70*1024*1024:
             raise Exception("FLE")
