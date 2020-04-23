@@ -416,19 +416,26 @@ class Tournament:
                 inv_ratings[engine_id] = (0, random.randint(0, 100))
         minelo = None
         minind = -1
+        has_match_left = False
         for i in range(self.nmatches):
             if self.matches[i].started == False:
+                has_match_left = True
                 player1 = self.matches[i].player1[0]
                 player2 = self.matches[i].player2[0]
+                if self.matches[i].player1[1] in client.blacklist or self.matches[i].player2[1] in client.blacklist:
+                    continue
                 curelo = inv_ratings[player1][0] - inv_ratings[player1][1] + inv_ratings[player2][0] - inv_ratings[player2][1]
                 if minelo == None or curelo < minelo:
                     minelo = curelo
                     minind = i
         if minind < 0:
-            return False
+            if has_match_left:
+                return 1
+            else:
+                return 0
         else:
             self.matches[minind].assign(client)
-            return True        
+            return 2      
         
     def save_state(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
@@ -540,6 +547,7 @@ class Client_state:
         self.cur_pos = None
         self.tmp_message = None
         self.cur_message = None
+        self.blacklist = None
     
     def assign(self, match):
         self.active = True
@@ -695,7 +703,10 @@ class Client_state:
     
     def process(self, output_queue):
         if self.active:
-            if self.has_player1 == None:
+            if self.blacklist is None:
+                self.ask = 'blacklist'
+                output_queue.put((self.addr, "blacklist"))
+            elif self.has_player1 == None:
                 self.ask = 'player1'
                 output_queue.put((self.addr, "engine exist " + self.match.player1[2]))
             elif self.has_player1 == False:
@@ -740,11 +751,13 @@ class Client_state:
             if self.ended:            
                 self.ask = None
                 output_queue.put((self.addr, "ok"))
-                if self.tournament.assign_match(self):
+                assign_match_result = self.tournament.assign_match(self)
+                if assign_match_result == 2:
                     self.process(output_queue)
                 else:
                     output_queue.put((self.addr, "end"))
-                    self.ended_all = True
+                    if assign_match_result == 0:
+                        self.ended_all = True
         
 
 def print_log(outstr, file = None):
@@ -1167,4 +1180,11 @@ if __name__ == "__main__":
             if real_time_message:
                 tmp_message = sinstr[1]
                 cur_client.tmp_message = tmp_message
+                cur_client.process(output_queue)
+        elif sinstr[0].lower() == 'blacklist':
+            if cur_client.ask == 'blacklist':
+                if sinstr[1] == 'None':
+                    cur_client.blacklist = []
+                else:
+                    cur_client.blacklist = sinstr[1].split(';')
                 cur_client.process(output_queue)
