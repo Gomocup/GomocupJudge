@@ -700,13 +700,10 @@ class Client_state:
         fmessage.write(self.cur_message)
         fmessage.close()
         ssh_upload(message_path, True)
-    
+
     def process(self, output_queue):
         if self.active:
-            if self.blacklist is None:
-                self.ask = 'blacklist'
-                output_queue.put((self.addr, "blacklist"))
-            elif self.has_player1 == None:
+            if self.has_player1 == None:
                 self.ask = 'player1'
                 output_queue.put((self.addr, "engine exist " + self.match.player1[2]))
             elif self.has_player1 == False:
@@ -748,7 +745,10 @@ class Client_state:
                                   ' ' + self.match.tolerance + ' ' + self.match.opening + ' ' + self.match.board_size + \
                                   ' ' + self.match.memory))
         else:
-            if self.ended:            
+            if self.blacklist is None:
+                self.ask = 'blacklist'
+                output_queue.put((self.addr, "blacklist"))
+            elif self.ended:            
                 self.ask = None
                 output_queue.put((self.addr, "ok"))
                 assign_match_result = self.tournament.assign_match(self)
@@ -1130,7 +1130,8 @@ if __name__ == "__main__":
         if len(sinstr) == 0:
             continue
         if sinstr[0].lower() == 'connected':
-            tournament_state.assign_match(cur_client)
+            cur_client.active = False
+            cur_client.blacklist = None
             cur_client.process(output_queue)
         elif sinstr[0].lower() == 'yes':
             if cur_client.ask == 'player1':
@@ -1187,4 +1188,5 @@ if __name__ == "__main__":
                     cur_client.blacklist = []
                 else:
                     cur_client.blacklist = sinstr[1].split(';')
+                tournament_state.assign_match(cur_client)
                 cur_client.process(output_queue)
