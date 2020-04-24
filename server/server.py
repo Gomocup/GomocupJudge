@@ -424,7 +424,7 @@ class Tournament:
                 player2 = self.matches[i].player2[0]
                 is_black = False
                 for blacklist_engine in client.blacklist:
-                    if blacklist_engine in self.matches[i].player1[1] or blacklist_engine in self.matches[i].player2[1]:
+                    if blacklist_engine.lower() in self.matches[i].player1[1].lower() or blacklist_engine.lower() in self.matches[i].player2[1].lower():
                         is_black = True
                         break
                 if is_black:
