@@ -12,12 +12,13 @@ from ai_match import ai_match
 from utility import *
 
 class client(object):
-    def __init__(self, host, port, working_dir, debug, special_rule):
+    def __init__(self, host, port, working_dir, debug, special_rule, blacklist):
         self.host = host
         self.port = port
         self.working_dir = working_dir
         self.debug = debug
         self.special_rule = special_rule
+        self.blacklist = blacklist
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((self.host, self.port))
         self.engine_dir = os.path.join(self.working_dir, "engine")
@@ -104,7 +105,9 @@ class client(object):
             buf = self.recv(16*1024*1024)
             #print '\"' + buf + '\"'
             #sys.stdout.flush()
-            if buf.lower().startswith("engine exist"):
+            if buf.lower().startswith("blacklist"):
+                self.send("blacklist " + self.blacklist)
+            elif buf.lower().startswith("engine exist"):
                 md5 = buf.strip().split()[-1]
                 exist = False
                 for engine in self.engine:
@@ -240,6 +243,7 @@ def main():
     parser.add_argument("--dir", dest="working_dir", action="store", required=True)
     parser.add_argument("--debug", dest="debug", action="store", default=False, required=False)
     parser.add_argument("--rule", dest="special_rule", action="store", default="", required=False)
+    parser.add_argument("--blacklist", dest="blacklist", action="store", default="None", required=False)
     
     args = parser.parse_args()
 
