@@ -422,9 +422,13 @@ class Tournament:
                 has_match_left = True
                 player1 = self.matches[i].player1[0]
                 player2 = self.matches[i].player2[0]
+                is_black = False
                 for blacklist_engine in client.blacklist:
                     if blacklist_engine in self.matches[i].player1[1] or blacklist_engine in self.matches[i].player2[1]:
-                        continue
+                        is_black = True
+                        break
+                if is_black:
+                    continue
                 curelo = inv_ratings[player1][0] - inv_ratings[player1][1] + inv_ratings[player2][0] - inv_ratings[player2][1]
                 if minelo == None or curelo < minelo:
                     minelo = curelo
