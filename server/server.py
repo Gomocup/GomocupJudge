@@ -14,18 +14,20 @@ import random
 import ftplib
 import paramiko
 
+
 def get_md5(curpath, engine):
     engine_path = curpath + slash + 'engine' + slash + engine
     if os.path.isfile(engine_path):
         fin = open(engine_path, 'rb')
         reads = fin.read()
-        fin.close() 
+        fin.close()
         if not reads:
             return None
         md5 = hashlib.md5(reads).hexdigest()
         return md5
     else:
         return None
+
 
 def get_base64(curpath, engine):
     engine_path = curpath + slash + 'engine' + slash + engine
@@ -37,10 +39,14 @@ def get_base64(curpath, engine):
             return None
         return re.sub(r'\s+', '', base64.b64encode(reads))
     else:
-        return None        
+        return None
+
 
 class Match:
-    def __init__(self, curpath, tournament, tur_name, matchid, player1, player2, round, board_size, rule, opening, time_turn, time_match, tolerance, memory, real_time_pos, real_time_message):
+    def __init__(self, curpath, tournament, tur_name, matchid, player1,
+                 player2, round, board_size, rule, opening, time_turn,
+                 time_match, tolerance, memory, real_time_pos,
+                 real_time_message):
         self.curpath = curpath
         self.tournament = tournament
         self.tur_name = tur_name
@@ -48,11 +54,11 @@ class Match:
         self.player1 = player1
         self.player2 = player2
         self.swapped = False
-        self.round = round    
+        self.round = round
         self.group_id = (self.player1[0], self.player2[0], self.round)
         self.board_size = board_size
         self.rule = rule
-        self.opening = opening        
+        self.opening = opening
         self.reverse = opening_reverse(opening)
         self.time_turn = time_turn
         self.time_match = time_match
@@ -68,14 +74,14 @@ class Match:
         self.move1 = 0
         self.move2 = 0
         self.client = None
-    
+
     def assign(self, client):
         self.client = client
         self.started = True
         #print repr(self.player1)
         #print repr(self.player2)
         client.assign(self)
-        
+
     def reinit(self):
         self.started = False
         self.result = None
@@ -85,28 +91,38 @@ class Match:
         self.move1 = 0
         self.move2 = 0
         self.client = None
-        
+
     def to_string(self):
-        return repr(self.group_id) + '\t' + repr(self.result) + '\t' + repr(self.end_with) + '\t' + repr(self.time1) + '\t' + repr(self.time2) + '\t' + repr(self.move1) + '\t' + repr(self.move2)
-    
+        return repr(self.group_id) + '\t' + repr(self.result) + '\t' + repr(
+            self.end_with) + '\t' + repr(self.time1) + '\t' + repr(
+                self.time2) + '\t' + repr(self.move1) + '\t' + repr(self.move2)
+
     def read_string(self, cur_str):
-        cur_group_id, self.result, self.end_with, self.time1, self.time2, self.move1, self.move2 = map(eval, cur_str.split("\t"))
+        cur_group_id, self.result, self.end_with, self.time1, self.time2, self.move1, self.move2 = map(
+            eval, cur_str.split("\t"))
         if self.result != None:
             self.started = True
         else:
             self.started = False
+
 
 def soft_div(a, b, un):
     if b != 0:
         return str(int(round(a * 1.0 / b))) + un
     else:
         return '-'
-        
+
+
 class Tournament:
-    def __init__(self, curpath, engines, tur_name, board_size, rule, openings, is_tournament, time_turn, time_match, tolerance, memory, real_time_pos, real_time_message):
+    def __init__(self, curpath, engines, engine_ratings, rating_diff, tur_name,
+                 board_size, rule, openings, is_tournament, time_turn,
+                 time_match, tolerance, memory, real_time_pos,
+                 real_time_message):
         self.curpath = curpath
         self.enginepath = curpath + slash + 'engine'
         self.engines = engines
+        self.engine_ratings = engine_ratings
+        self.rating_diff = rating_diff
         self.short_engines = self.get_short_engines(3)
         print self.engines
         print self.short_engines
@@ -127,9 +143,11 @@ class Tournament:
         self.real_time_pos = real_time_pos
         self.real_time_message = real_time_message
         self.matches = []
-        self.ratings = [(i, None, self.engines[i]) for i in range(self.nengines)]
+        self.ratings = [(i, None, self.engines[i])
+                        for i in range(self.nengines)]
         self.lresult = [[0, 0, 0] for i in range(self.nengines)]
-        self.mresult = [[[0, 0, 0] for i in range(self.nengines)] for j in range(self.nengines)]
+        self.mresult = [[[0, 0, 0] for i in range(self.nengines)]
+                        for j in range(self.nengines)]
         self.times = [0 for i in range(self.nengines)]
         self.moves = [0 for i in range(self.nengines)]
         self.games = [0 for i in range(self.nengines)]
@@ -145,22 +163,47 @@ class Tournament:
                 for j in range(self.nengines):
                     for k in range(self.nengines):
                         if j < k:
+                            if self.rating_diff > 0:
+                                rating_1 = self.engine_ratings[j]
+                                rating_2 = self.engine_ratings[k]
+                                if rating_1 > 0 and rating_2 > 0 and abs(
+                                        rating_1 -
+                                        rating_2) >= self.rating_diff:
+                                    continue
                             player1 = (j, self.engines[j], self.md5s[j])
                             player2 = (k, self.engines[k], self.md5s[k])
-                            cur_match = Match(curpath, self, tur_name, matchcount, player1, player2, i, board_size, rule, openings[i], time_turn, time_match, tolerance, memory, real_time_pos, real_time_message)
+                            cur_match = Match(curpath, self, tur_name,
+                                              matchcount, player1, player2, i,
+                                              board_size, rule, openings[i],
+                                              time_turn, time_match, tolerance,
+                                              memory, real_time_pos,
+                                              real_time_message)
                             self.matches.append(cur_match)
                             matchcount += 1
-                            cur_match = Match(curpath, self, tur_name, matchcount, player2, player1, i, board_size, rule, openings[i], time_turn, time_match, tolerance, memory, real_time_pos, real_time_message)
+                            cur_match = Match(curpath, self, tur_name,
+                                              matchcount, player2, player1, i,
+                                              board_size, rule, openings[i],
+                                              time_turn, time_match, tolerance,
+                                              memory, real_time_pos,
+                                              real_time_message)
                             self.matches.append(cur_match)
                             matchcount += 1
             else:
                 for k in range(1, self.nengines):
                     player1 = (0, self.engines[0], self.md5s[0])
                     player2 = (k, self.engines[k], self.md5s[k])
-                    cur_match = Match(curpath, self, tur_name, matchcount, player1, player2, i, board_size, rule, openings[i], time_turn, time_match, tolerance, memory, real_time_pos, real_time_message)
+                    cur_match = Match(curpath, self, tur_name, matchcount,
+                                      player1, player2, i, board_size, rule,
+                                      openings[i], time_turn, time_match,
+                                      tolerance, memory, real_time_pos,
+                                      real_time_message)
                     self.matches.append(cur_match)
                     matchcount += 1
-                    cur_match = Match(curpath, self, tur_name, matchcount, player2, player1, i, board_size, rule, openings[i], time_turn, time_match, tolerance, memory, real_time_pos, real_time_message)
+                    cur_match = Match(curpath, self, tur_name, matchcount,
+                                      player2, player1, i, board_size, rule,
+                                      openings[i], time_turn, time_match,
+                                      tolerance, memory, real_time_pos,
+                                      real_time_message)
                     self.matches.append(cur_match)
                     matchcount += 1
         self.nmatches = len(self.matches)
@@ -170,7 +213,7 @@ class Tournament:
         self.statistics()
         self.print_table()
         self.print_statistics()
-        
+
     def get_short_engines(self, len_name):
         engines = self.engines[:]
         for i in range(len(engines)):
@@ -207,9 +250,11 @@ class Tournament:
                 if len(engines) <= 1:
                     continue
                 for engine, pos in engines:
-                    if pos < len(engine) - 1 and (pos > minpos or minpos == maxpos):
+                    if pos < len(engine) - 1 and (pos > minpos
+                                                  or minpos == maxpos):
                         pos += 1
-                        short_engines[engine] = (engine[:len_name - 1] + engine[pos], pos)
+                        short_engines[engine] = (engine[:len_name - 1] +
+                                                 engine[pos], pos)
                         flag = True
             if not flag:
                 break
@@ -217,7 +262,7 @@ class Tournament:
         for engine, short_engine in short_engines.iteritems():
             ret_short_engines[engine] = short_engine[0]
         return ret_short_engines
-    
+
     def statistics(self):
         self.times = [0 for i in range(self.nengines)]
         self.moves = [0 for i in range(self.nengines)]
@@ -269,9 +314,10 @@ class Tournament:
                         self.draws[player1][1] += 1
                         self.draws[player2][0] += 1
         for i in range(self.nengines):
-            if self.games[i] > 0 and (self.timeouts[i] + self.crashes[i]) * 1.0 / self.games[i] > 0.1:
+            if self.games[i] > 0 and (self.timeouts[i] + self.crashes[i]
+                                      ) * 1.0 / self.games[i] > 0.1:
                 self.valids[i] = False
-        
+
     def generate_pgn(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         pgn_file = result_path + slash + "result.pgn"
@@ -279,10 +325,13 @@ class Tournament:
         nmatches = 0
         for match in self.matches:
             if match.result != None:
-                if self.valids[match.player1[0]] == False or self.valids[match.player2[0]] == False:
+                if self.valids[match.player1[0]] == False or self.valids[
+                        match.player2[0]] == False:
                     continue
-                fout.write("[White \"" + str(match.player1[0]) + "#" + match.player1[1].rsplit('.', 1)[0] + "\"]\n")
-                fout.write("[Black \"" + str(match.player2[0]) + "#" + match.player2[1].rsplit('.', 1)[0] + "\"]\n")
+                fout.write("[White \"" + str(match.player1[0]) + "#" +
+                           match.player1[1].rsplit('.', 1)[0] + "\"]\n")
+                fout.write("[Black \"" + str(match.player2[0]) + "#" +
+                           match.player2[1].rsplit('.', 1)[0] + "\"]\n")
                 if match.result == 1:
                     cur_result = "1-0"
                 elif match.result == 2:
@@ -299,13 +348,16 @@ class Tournament:
             return True
         else:
             return False
-        
-    def compute_elo(self):        
+
+    def compute_elo(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         ratings = []
         if self.generate_pgn():
             bayeselo_exe = self.curpath + slash + "bayeselo.exe"
-            p = subprocess.Popen([bayeselo_exe], bufsize = 1048576, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            p = subprocess.Popen([bayeselo_exe],
+                                 bufsize=1048576,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE)
             pin, pout = p.stdin, p.stdout
             pin.write("readpgn " + result_path + slash + "result.pgn\n")
             pin.flush()
@@ -334,21 +386,27 @@ class Tournament:
                     break
                 reads = reads.strip()
                 reads = re.split(r'\s+', reads)
-                ratings.append((string.atoi(reads[1].split('#', 1)[0]), string.atoi(reads[2]), reads[1].split('#', 1)[1], string.atoi(reads[4])))
+                ratings.append(
+                    (string.atoi(reads[1].split('#',
+                                                1)[0]), string.atoi(reads[2]),
+                     reads[1].split('#', 1)[1], string.atoi(reads[4])))
             fin.close()
         inratings = [False for i in range(self.nengines)]
         for engine_id, rating, engine_name, rating_m in ratings:
             inratings[engine_id] = True
         for i in range(self.nengines):
             if not inratings[i]:
-                ratings.append((i, None, self.engines[i].rsplit('.', 1)[0], None))
+                ratings.append((i, None, self.engines[i].rsplit('.',
+                                                                1)[0], None))
         self.ratings = ratings
-        
+
     def print_table(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         self.compute_elo()
         fout = open(result_path + slash + "_table.html", 'w')
-        fout.write("<HTML>\n<HEAD>\n<TITLE>Piskvork tournament result</TITLE>\n<LINK href=\"piskvork.css\" type=text/css rel=stylesheet>\n</HEAD>\n")
+        fout.write(
+            "<HTML>\n<HEAD>\n<TITLE>Piskvork tournament result</TITLE>\n<LINK href=\"piskvork.css\" type=text/css rel=stylesheet>\n</HEAD>\n"
+        )
         fout.write("<BODY>\n")
         fout.write("<TABLE border=1 class=\"result\">\n")
         #fout.write("<LINK href=\"http://gomocup.org/wp-content/tournaments/tables/piskvork.css\" type=text/css rel=stylesheet/>\n")
@@ -360,7 +418,8 @@ class Tournament:
             cur_name = engine_name
             short_name = self.short_engines[cur_name]
             #short_name = cur_name[:min(3, len(cur_name))]
-            fout.write("<TH><NUM>" + str(cur_rank) + "</NUM><BR/><NAME>" + short_name + "<NAME></TH>")
+            fout.write("<TH><NUM>" + str(cur_rank) + "</NUM><BR/><NAME>" +
+                       short_name + "<NAME></TH>")
         fout.write("</TR>\n")
         cur_rank = 0
         for engine_id, rating, engine_name, rating_m in self.ratings:
@@ -371,7 +430,11 @@ class Tournament:
                 rating_str = "-"
             else:
                 rating_str = str(rating)
-            fout.write("<TR><TD><NUM>" + str(cur_rank) + "</NUM></TD><TD><NAME>" + cur_name + "</NAME></TD><TD>" + rating_str + "</TD><TD>" + str(cur_lresult[0]) + ":" + str(cur_lresult[1]) + "</TD>")
+            fout.write("<TR><TD><NUM>" + str(cur_rank) +
+                       "</NUM></TD><TD><NAME>" + cur_name +
+                       "</NAME></TD><TD>" + rating_str + "</TD><TD>" +
+                       str(cur_lresult[0]) + ":" + str(cur_lresult[1]) +
+                       "</TD>")
             for engine_id_2, rating_2, engine_name_2, rating_m_2 in self.ratings:
                 if engine_id == engine_id_2:
                     fout.write("<TD class=\"dash\">-</TD>")
@@ -379,16 +442,21 @@ class Tournament:
                     cur_mresult = self.mresult[engine_id][engine_id_2]
                     winf = cur_mresult[0] - cur_mresult[1]
                     if winf > 0:
-                        fout.write("<TD class=\"win\">" + str(cur_mresult[0]) + ":" + str(cur_mresult[1]) + "</TD>")
+                        fout.write("<TD class=\"win\">" + str(cur_mresult[0]) +
+                                   ":" + str(cur_mresult[1]) + "</TD>")
                     elif winf == 0:
-                        fout.write("<TD class=\"draw\">" + str(cur_mresult[0]) + ":" + str(cur_mresult[1]) + "</TD>")
+                        fout.write("<TD class=\"draw\">" +
+                                   str(cur_mresult[0]) + ":" +
+                                   str(cur_mresult[1]) + "</TD>")
                     else:
-                        fout.write("<TD class=\"loss\">" + str(cur_mresult[0]) + ":" + str(cur_mresult[1]) + "</TD>")
+                        fout.write("<TD class=\"loss\">" +
+                                   str(cur_mresult[0]) + ":" +
+                                   str(cur_mresult[1]) + "</TD>")
             fout.write("</TR>\n")
         fout.write("</TBODY>\n</TABLE>\n</BODY>\n</HTML>\n")
         fout.close()
         ssh_upload(result_path + slash + "_table.html", False)
-        
+
     def print_statistics(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         fout = open(result_path + slash + "_result.txt", 'w')
@@ -397,16 +465,30 @@ class Tournament:
             cur_rank += 1
             if not rating:
                 rating = '-'
-            fout.write(str(cur_rank) + '. ' + engine_name + ' ' + str(rating) + '\n')
-            fout.write('    wins: ' + str(self.wins[engine_id][0]) + '+' + str(self.wins[engine_id][1]) + ', ')
-            fout.write('losses: ' + str(self.losses[engine_id][0]) + '+' + str(self.losses[engine_id][1]) + ', ')
-            fout.write('draws: ' + str(self.draws[engine_id][0]) + '+' + str(self.draws[engine_id][1]) + '\n')
-            fout.write('    timeouts: ' + str(self.timeouts[engine_id]) + ', ' + 'errors: ' + str(self.crashes[engine_id]) + ', ' + 'total games: ' + str(self.games[engine_id]) + '\n')
-            fout.write('    time/game: ' + soft_div(self.times[engine_id], self.games[engine_id]*1000, 's') + ', ' + 'time/turn: ' + soft_div(self.times[engine_id], self.moves[engine_id], 'ms') + ', ' + 'move/game: ' + soft_div(self.moves[engine_id], self.games[engine_id], '') + '\n')
+            fout.write(
+                str(cur_rank) + '. ' + engine_name + ' ' + str(rating) + '\n')
+            fout.write('    wins: ' + str(self.wins[engine_id][0]) + '+' +
+                       str(self.wins[engine_id][1]) + ', ')
+            fout.write('losses: ' + str(self.losses[engine_id][0]) + '+' +
+                       str(self.losses[engine_id][1]) + ', ')
+            fout.write('draws: ' + str(self.draws[engine_id][0]) + '+' +
+                       str(self.draws[engine_id][1]) + '\n')
+            fout.write('    timeouts: ' + str(self.timeouts[engine_id]) +
+                       ', ' + 'errors: ' + str(self.crashes[engine_id]) +
+                       ', ' + 'total games: ' + str(self.games[engine_id]) +
+                       '\n')
+            fout.write(
+                '    time/game: ' +
+                soft_div(self.times[engine_id], self.games[engine_id] *
+                         1000, 's') + ', ' + 'time/turn: ' +
+                soft_div(self.times[engine_id], self.moves[engine_id], 'ms') +
+                ', ' + 'move/game: ' +
+                soft_div(self.moves[engine_id], self.games[engine_id], '') +
+                '\n')
             fout.write('\n')
         fout.close()
         ssh_upload(result_path + slash + "_result.txt", False)
-              
+
     def assign_match(self, client):
         inv_ratings = {}
         for engine_id, rating, engine_name, rating_m in self.ratings:
@@ -424,12 +506,15 @@ class Tournament:
                 player2 = self.matches[i].player2[0]
                 is_black = False
                 for blacklist_engine in client.blacklist:
-                    if blacklist_engine.lower() in self.matches[i].player1[1].lower() or blacklist_engine.lower() in self.matches[i].player2[1].lower():
+                    if blacklist_engine.lower() in self.matches[i].player1[
+                            1].lower() or blacklist_engine.lower(
+                            ) in self.matches[i].player2[1].lower():
                         is_black = True
                         break
                 if is_black:
                     continue
-                curelo = inv_ratings[player1][0] - inv_ratings[player1][1] + inv_ratings[player2][0] - inv_ratings[player2][1]
+                curelo = inv_ratings[player1][0] - inv_ratings[player1][
+                    1] + inv_ratings[player2][0] - inv_ratings[player2][1]
                 if minelo == None or curelo < minelo:
                     minelo = curelo
                     minind = i
@@ -440,8 +525,8 @@ class Tournament:
                 return 0
         else:
             self.matches[minind].assign(client)
-            return 2      
-        
+            return 2
+
     def save_state(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         state_path = result_path + slash + "state.txt"
@@ -449,7 +534,7 @@ class Tournament:
         for match in self.matches:
             fout.write(match.to_string() + '\n')
         fout.close()
-       
+
     def load_state(self):
         result_path = self.curpath + slash + 'result' + slash + tur_name
         state_path = result_path + slash + "state.txt"
@@ -468,8 +553,8 @@ class Tournament:
                 break
         self.leftmatches = leftmatches
         fin.close()
-        self.restore_result()        
-        
+        self.restore_result()
+
     def restore_result(self):
         for match in self.matches:
             player1 = match.player1[0]
@@ -490,7 +575,8 @@ class Tournament:
                     self.lresult[player2][2] += 1
                     self.mresult[player1][player2][2] += 1
                     self.mresult[player2][player1][2] += 1
-        
+
+
 def cmp_result(result1, result2):
     win1 = result1[1][0] * 1.0 + result1[1][2] * 0.5
     loss1 = result1[1][1] * 1.0 + result1[1][2] * 0.5
@@ -510,15 +596,20 @@ def cmp_result(result1, result2):
         return -1
     else:
         return int(win1 - win2)
-        
+
+
 def extend_pos(pos, board_size, player1, player2):
-    return 'Piskvorky ' + str(board_size) + 'x' + str(board_size) + ', 11:11, 0\n' + pos + player1 + '\n' + player2 + '\n' + '-1\n'
-    
+    return 'Piskvorky ' + str(board_size) + 'x' + str(
+        board_size
+    ) + ', 11:11, 0\n' + pos + player1 + '\n' + player2 + '\n' + '-1\n'
+
+
 def parse_pos(pos, opening):
     len_opening = opening_length(opening)
     spos = pos.strip()
     if spos:
-        times = map(lambda x: string.atoi(x.split(',')[-1]), pos.strip().split('\n'))[len_opening:]
+        times = map(lambda x: string.atoi(x.split(',')[-1]),
+                    pos.strip().split('\n'))[len_opening:]
     else:
         times = []
     len_times = len(times)
@@ -529,7 +620,8 @@ def parse_pos(pos, opening):
     move1 = len(times1)
     move2 = len(times2)
     return (time1, time2, move1, move2)
-                    
+
+
 class Client_state:
     def __init__(self, curpath, addr):
         self.curpath = curpath
@@ -553,7 +645,7 @@ class Client_state:
         self.tmp_message = None
         self.cur_message = None
         self.blacklist = None
-    
+
     def assign(self, match):
         self.active = True
         self.matchid = match.matchid
@@ -571,9 +663,10 @@ class Client_state:
         self.cur_pos = None
         self.tmp_message = None
         self.cur_message = None
-        outstr = 'Game ' + str(self.match.group_id) + ' started on Client ' + self.addr + '.'
+        outstr = 'Game ' + str(
+            self.match.group_id) + ' started on Client ' + self.addr + '.'
         print_log(outstr)
-            
+
     def end(self, pos, message, result, end_with):
         pos = base64.b64decode(pos)
         pos = opening_pos2psq(self.match.opening) + pos
@@ -588,14 +681,19 @@ class Client_state:
         player1 = self.match.player1
         player2 = self.match.player2
         tur_name = self.match.tur_name
-        pos_name = str(round) + '_' + str(player1[0]) + '_' + str(player2[0]) + '_' + str(result_raw) + '.psq'
+        pos_name = str(round) + '_' + str(player1[0]) + '_' + str(
+            player2[0]) + '_' + str(result_raw) + '.psq'
         result_path = self.curpath + slash + 'result' + slash + tur_name
         pos_path = result_path + slash + pos_name
         fpos = open(pos_path, 'w')
         if not (self.match.reverse ^ self.match.swapped):
-            fpos.write(extend_pos(pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+            fpos.write(
+                extend_pos(pos, self.match.board_size, self.match.player1[1],
+                           self.match.player2[1]))
         else:
-            fpos.write(extend_pos(pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
+            fpos.write(
+                extend_pos(pos, self.match.board_size, self.match.player2[1],
+                           self.match.player1[1]))
         if self.match.swapped and result > 0:
             show_result = 3 - result
         else:
@@ -610,8 +708,9 @@ class Client_state:
         fmessage.close()
         ssh_upload(result_path + slash + 'message.txt', False)
         self.match.result = result
-        self.match.end_with = end_with  
-        self.match.time1, self.match.time2, self.match.move1, self.match.move2 = parse_pos(pos, self.match.opening)
+        self.match.end_with = end_with
+        self.match.time1, self.match.time2, self.match.move1, self.match.move2 = parse_pos(
+            pos, self.match.opening)
         cur_tur = self.tournament
         player1_id = player1[0]
         player2_id = player2[0]
@@ -630,10 +729,11 @@ class Client_state:
             cur_tur.lresult[player2_id][2] += 1
             cur_tur.mresult[player1_id][player2_id][2] += 1
             cur_tur.mresult[player2_id][player1_id][2] += 1
-        
-        outstr = 'Game ' + str(self.match.group_id) + ' finished on Client ' + self.addr + '.'
+
+        outstr = 'Game ' + str(
+            self.match.group_id) + ' finished on Client ' + self.addr + '.'
         print_log(outstr)
-        
+
         self.active = False
         self.matchid = None
         self.match = None
@@ -650,25 +750,26 @@ class Client_state:
         self.cur_pos = None
         self.tmp_message = None
         self.cur_message = None
-        
+
         self.tournament.save_state()
         self.tournament.statistics()
         self.tournament.print_table()
         self.tournament.print_statistics()
-        
+
         cur_tur.leftmatches -= 1
         if cur_tur.leftmatches == 0:
             return True
         else:
             return False
-            
+
     def save_pos(self, pos):
         pos = base64.b64decode(pos)
         if not self.cur_pos:
             self.cur_pos = opening_pos2psq(self.match.opening) + pos
         else:
             self.cur_pos = self.cur_pos + pos
-        pos_name = self.addr.replace('.', '_').replace(':', '_') + '_' + self.match.tur_name + '.psq'
+        pos_name = self.addr.replace('.', '_').replace(
+            ':', '_') + '_' + self.match.tur_name + '.psq'
         tmp_path = self.curpath + slash + 'result' + slash + 'tmp'
         if os.path.exists(tmp_path):
             if not os.path.isdir(tmp_path):
@@ -679,20 +780,24 @@ class Client_state:
         pos_path = tmp_path + slash + pos_name
         fpos = open(pos_path, 'w')
         if not (self.match.reverse ^ self.match.swapped):
-            fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player1[1], self.match.player2[1]))
+            fpos.write(
+                extend_pos(self.cur_pos, self.match.board_size,
+                           self.match.player1[1], self.match.player2[1]))
         else:
-            fpos.write(extend_pos(self.cur_pos, self.match.board_size, self.match.player2[1], self.match.player1[1]))
+            fpos.write(
+                extend_pos(self.cur_pos, self.match.board_size,
+                           self.match.player2[1], self.match.player1[1]))
         fpos.close()
         if random.random() < upload_ratio:
             ssh_upload(pos_path, True)
-        
+
     def save_message(self, message):
         message = base64.b64decode(message)
         if not self.cur_message:
             self.cur_message = message
         else:
             self.cur_message = self.cur_message + message
-        message_name = self.addr.replace('.', '_').replace(':', '_') + '.txt'    
+        message_name = self.addr.replace('.', '_').replace(':', '_') + '.txt'
         tmp_path = self.curpath + slash + 'result' + slash + 'tmp'
         if os.path.exists(tmp_path):
             if not os.path.isdir(tmp_path):
@@ -710,16 +815,24 @@ class Client_state:
         if self.active:
             if self.has_player1 == None:
                 self.ask = 'player1'
-                output_queue.put((self.addr, "engine exist " + self.match.player1[2]))
+                output_queue.put(
+                    (self.addr, "engine exist " + self.match.player1[2]))
             elif self.has_player1 == False:
                 self.ask = 'player1'
-                output_queue.put((self.addr, "engine send " + base64.b64encode(self.match.player1[1]) + " " + get_base64(self.curpath, self.match.player1[1])))
+                output_queue.put(
+                    (self.addr,
+                     "engine send " + base64.b64encode(self.match.player1[1]) +
+                     " " + get_base64(self.curpath, self.match.player1[1])))
             elif self.has_player2 == None:
                 self.ask = 'player2'
-                output_queue.put((self.addr, "engine exist " + self.match.player2[2]))
+                output_queue.put(
+                    (self.addr, "engine exist " + self.match.player2[2]))
             elif self.has_player2 == False:
                 self.ask = 'player2'
-                output_queue.put((self.addr, "engine send " + base64.b64encode(self.match.player2[1]) + " " + get_base64(self.curpath, self.match.player2[1])))
+                output_queue.put(
+                    (self.addr,
+                     "engine send " + base64.b64encode(self.match.player2[1]) +
+                     " " + get_base64(self.curpath, self.match.player2[1])))
             elif self.sent_real_time_pos == False:
                 self.ask = 'real_time_pos'
                 if self.match.real_time_pos == True:
@@ -753,7 +866,7 @@ class Client_state:
             if self.blacklist is None:
                 self.ask = 'blacklist'
                 output_queue.put((self.addr, "blacklist"))
-            elif self.ended:            
+            elif self.ended:
                 self.ask = None
                 output_queue.put((self.addr, "ok"))
                 assign_match_result = self.tournament.assign_match(self)
@@ -763,12 +876,12 @@ class Client_state:
                     output_queue.put((self.addr, "end"))
                     if assign_match_result == 0:
                         self.ended_all = True
-        
 
-def print_log(outstr, file = None):
+
+def print_log(outstr, file=None):
     curtime = time.time()
     strdate = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(curtime))
-    outstring = '[' + strdate + ']' + ' ' + outstr    
+    outstring = '[' + strdate + ']' + ' ' + outstr
     if not file:
         print outstring
         file = log_file
@@ -776,18 +889,20 @@ def print_log(outstr, file = None):
     fout.write(outstring)
     fout.write('\n')
     fout.close()
-   
+
 
 def connect_addr(addr, trecv, conn):
     outstr = 'Client ' + addr + ' connected.'
     print_log(outstr)
     trecvs[addr] = (trecv, conn)
-    
+
+
 def disconnect_addr(addr):
     outstr = 'Client ' + addr + ' disconnected.'
     print_log(outstr)
     if trecvs.has_key(addr):
         del trecvs[addr]
+
 
 def recv_client(conn, addr):
     global recv_str, recv_mutex
@@ -813,15 +928,18 @@ def recv_client(conn, addr):
             disconnect_addr(addr)
             if clients_state.has_key(addr):
                 if clients_state[addr].match:
-                    if clients_state[addr].match.result == None:                        
-                        outstr = 'Game ' + repr(clients_state[addr].match.group_id) + ' failed on Client ' + addr + '.'
+                    if clients_state[addr].match.result == None:
+                        outstr = 'Game ' + repr(
+                            clients_state[addr].match.group_id
+                        ) + ' failed on Client ' + addr + '.'
                         print_log(outstr)
                         clients_state[addr].match.reinit()
                 del clients_state[addr]
             return
 
+
 def output_client():
-    while(True):    
+    while (True):
         addr, outstr = output_queue.get()
         out_str = repr(('output', addr, outstr))
         print_log(out_str, net_log_file)
@@ -831,6 +949,7 @@ def output_client():
             if outstr == "end":
                 disconnect_addr(addr)
 
+
 def accept_client(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((host, port))
@@ -838,7 +957,7 @@ def accept_client(host, port):
     while True:
         conn, addr = s.accept()
         addr = addr[0] + ':' + str(addr[1])
-        trecv = threading.Thread(target = recv_client, args = (conn, addr))        
+        trecv = threading.Thread(target=recv_client, args=(conn, addr))
         connect_addr(addr, trecv, conn)
         trecv.start()
         clients_state[addr] = Client_state(curpath, addr)
@@ -846,6 +965,7 @@ def accept_client(host, port):
         out_str = repr(('input', addr, 'connected'))
         print_log(out_str, net_log_file)
     conn.close()
+
 
 def check_end():
     while True:
@@ -863,7 +983,8 @@ def check_end():
             print_log("Server ended.")
             os._exit(0)
         time.sleep(1)
-    
+
+
 def parse_line_tournament(line):
     try:
         left, right = line.split('=')
@@ -876,6 +997,7 @@ def parse_line_tournament(line):
             return (left, right)
     except:
         return None
+
 
 def read_tournament(tournament_file):
     fin = open(tournament_file, 'r')
@@ -890,6 +1012,7 @@ def read_tournament(tournament_file):
     fin.close()
     return tournament_map
 
+
 def parse_line_opening(line):
     try:
         line = line.strip()
@@ -897,6 +1020,7 @@ def parse_line_opening(line):
         return line
     except:
         return None
+
 
 def opening2pos(opening, board_size):
     opening = opening.split(',')
@@ -909,6 +1033,7 @@ def opening2pos(opening, board_size):
         pos = pos + str(1 + cury)
     return pos
 
+
 def opening_pos2psq(pos):
     poses = re.findall(r'[a-z][0-9]{1,2}', pos)
     cur_psq = ''
@@ -917,7 +1042,8 @@ def opening_pos2psq(pos):
         py = string.atoi(p[1:])
         cur_psq += str(px) + ',' + str(py) + ',' + '0\n'
     return cur_psq
- 
+
+
 def opening_reverse(pos):
     count = 0
     for c in pos:
@@ -927,14 +1053,16 @@ def opening_reverse(pos):
         return True
     else:
         return False
-        
+
+
 def opening_length(pos):
     count = 0
     for c in pos:
         if c >= 'a' and c <= 'z':
             count += 1
     return count
-    
+
+
 def read_opening(opening_file, board_size):
     fin = open(opening_file, 'r')
     openings_list = []
@@ -949,12 +1077,13 @@ def read_opening(opening_file, board_size):
     if len(openings_list) == 0:
         openings_list.append("")
     return openings_list
-    
+
+
 class Ftp_Queue:
     def __init__(self):
         self.mutex = threading.Lock()
         self.ele = []
-    
+
     def get(self):
         while True:
             if self.mutex.acquire():
@@ -966,18 +1095,18 @@ class Ftp_Queue:
                     self.mutex.release()
                     return ret
             time.sleep(1)
-    
+
     def put(self, ele):
         if self.mutex.acquire():
             if ele not in self.ele:
                 self.ele.append(ele)
             self.mutex.release()
-        
+
     def put_to_head(self, ele):
         if self.mutex.acquire():
             self.ele.insert(0, ele)
             self.mutex.release()
-    
+
     def empty(self):
         if self.mutex.acquire():
             if not self.ele:
@@ -986,6 +1115,7 @@ class Ftp_Queue:
             else:
                 self.mutex.release()
                 return False
+
 
 def ssh_connect():
     if remote_info:
@@ -998,14 +1128,16 @@ def ssh_connect():
         username = remote_info[1]
         password = remote_info[2]
         tra = paramiko.Transport((ssh_server, port))
-        tra.connect(username = username, password = password)
+        tra.connect(username=username, password=password)
         sftp = paramiko.SFTPClient.from_transport(tra)
         return (tra, sftp)
-    
+
+
 def ssh_upload(upfile, is_online):
     if remote_info:
         ftp_queue.put((upfile, is_online))
-                
+
+
 def ssh_upload_process():
     global ftp_queue
     if remote_info:
@@ -1021,19 +1153,21 @@ def ssh_upload_process():
                 sftp.put(upfile, r_path + upfile.split(slash)[-1])
             except:
                 ftp_queue.put_to_head((upfile, is_online))
-    
+
+
 def ssh_quit():
     tra.close()
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print 'Parameter error!'
         exit(-1)
-        
+
     trecvs = {}
     clients_state = {}
-    input_queue = Queue.Queue(maxsize = 0)
-    output_queue = Queue.Queue(maxsize = 0)
+    input_queue = Queue.Queue(maxsize=0)
+    output_queue = Queue.Queue(maxsize=0)
 
     curpath = sys.path[0]
     curos = platform.system()
@@ -1050,8 +1184,14 @@ if __name__ == "__main__":
     tur_name = tournament['name']
     board_size = tournament['board']
     rule = tournament['rule']
-    opening_file = curpath + slash + 'opening' + slash + tournament['opening'] + '.txt'
+    opening_file = curpath + slash + 'opening' + slash + tournament[
+        'opening'] + '.txt'
     engines = tournament['engines']
+    if 'engine_ratings' in tournament.keys():
+        engine_ratings = list(map(int, tournament['engine_ratings']))
+    else:
+        engine_ratings = [0 for i in range(len(engines))]
+    rating_diff = int(tournament.get('rating_diff', '0'))
     is_tournament = tournament['tournament']
     time_turn = tournament['time_turn']
     time_match = tournament['time_match']
@@ -1072,7 +1212,8 @@ if __name__ == "__main__":
     except:
         upload_ratio = 1.0
     try:
-        upload_offline_result = string.atoi(tournament['upload_offline_result'])
+        upload_offline_result = string.atoi(
+            tournament['upload_offline_result'])
         if upload_offline_result == 1:
             upload_offline_result = True
         else:
@@ -1091,7 +1232,8 @@ if __name__ == "__main__":
             remote_path = remote_path + '/'
         remote_online_path = remote_path + '/'
         remote_tur_path = remote_path + tur_name + '/'
-        remote_info = (remote_host, remote_username, remote_password, remote_online_path, remote_tur_path)
+        remote_info = (remote_host, remote_username, remote_password,
+                       remote_online_path, remote_tur_path)
     else:
         remote_info = None
     ftp_queue = Ftp_Queue()
@@ -1110,22 +1252,26 @@ if __name__ == "__main__":
     message_file = result_dir + slash + 'message.txt'
     openings = read_opening(opening_file, string.atoi(board_size))
 
-    tournament_state = Tournament(curpath, engines, tur_name, board_size, rule, openings, is_tournament, time_turn, time_match, tolerance, memory, real_time_pos, real_time_message)
+    tournament_state = Tournament(curpath, engines, engine_ratings,
+                                  rating_diff, tur_name, board_size, rule,
+                                  openings, is_tournament, time_turn,
+                                  time_match, tolerance, memory, real_time_pos,
+                                  real_time_message)
 
     host = '0.0.0.0'
     port = string.atoi(sys.argv[2])
-    taccept = threading.Thread(target = accept_client, args = (host, port))
+    taccept = threading.Thread(target=accept_client, args=(host, port))
     taccept.start()
-    toutput = threading.Thread(target = output_client)
+    toutput = threading.Thread(target=output_client)
     toutput.start()
-    tend = threading.Thread(target = check_end)
+    tend = threading.Thread(target=check_end)
     tend.start()
-    tftp = threading.Thread(target = ssh_upload_process)
-    tftp.start()    
-    
+    tftp = threading.Thread(target=ssh_upload_process)
+    tftp.start()
+
     print_log("Server started.")
 
-    while(True):
+    while (True):
         cur_input = input_queue.get()
         print cur_input
         inaddr = cur_input[0]
