@@ -51,6 +51,7 @@ class engine(object):
             self.write("SWAP2BOARD\n")
             for m in moves:
                 self.write(str(m[0]) + "," + str(m[1]) + "\n")
+            self.write("DONE\n")  
         elif self.boarded:
             self.write("TURN " + str(moves[-1][0]) + "," + str(moves[-1][1]) + "\n")
         else:
