@@ -176,13 +176,13 @@ def main():
     parser.add_argument("--key", dest="key", action="store", required=True)
     parser.add_argument("--ai", dest="ai", action="store", required=True)
     args = parser.parse_args()
-    client(host=args.host, name=args.name, key=args.key, ai=args.ai).listen()
+    while True:
+        try:
+            client(host=args.host, name=args.name, key=args.key, ai=args.ai).listen()
+        except:
+            print("restarting after crash...")
     
 
 if __name__ == '__main__':
-    while True:
-        try:
-            main()
-        except:
-            print("restarting after crash...")
+    main()
     
