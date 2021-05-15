@@ -97,6 +97,10 @@ class client(object):
                     if game in self.board:
                         self.board[game].stop()
                         del self.board[game]
+            for game in list(self.board.keys()):
+                if not game in games.keys():
+                    self.board[game].stop()
+                    del self.board[game]
             for game in games:
                 g = games[game]
                 if self.name == g["player_1"]['username']:
@@ -149,7 +153,7 @@ class client(object):
                                     break
                                
                         time.sleep(0.1)
-                        
+                  
                 assert(len(self.board) <= 1) #for Gomocup 2021
                     
             time.sleep(0.1)
