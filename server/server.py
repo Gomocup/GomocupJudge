@@ -706,7 +706,7 @@ class Client_state:
         fmessage.write(message)
         fmessage.write('\n--> ' + pos_path + '\n\n')
         fmessage.close()
-        ssh_upload(result_path + slash + 'message.txt', False)
+        #ssh_upload(result_path + slash + 'message.txt', False)
         self.match.result = result
         self.match.end_with = end_with
         self.match.time1, self.match.time2, self.match.move1, self.match.move2 = parse_pos(
@@ -809,7 +809,7 @@ class Client_state:
         fmessage = open(message_path, 'w')
         fmessage.write(self.cur_message)
         fmessage.close()
-        ssh_upload(message_path, True)
+        #ssh_upload(message_path, True)
 
     def process(self, output_queue):
         if self.active:
