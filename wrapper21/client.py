@@ -89,7 +89,12 @@ class client(object):
     def listen(self):
         
         while True:
-            resp = requests.get(self.host + 'game_bot/' + self.key + '/')
+            while True:
+                try:
+                    resp = requests.get(self.host + 'game_bot/' + self.key + '/')
+                    break
+                except:
+                    print("reconnecting (get) ...") 
             games = json.loads(resp.text)
             for game in games:
                 g = games[game]
@@ -148,7 +153,12 @@ class client(object):
                                             move[i] = chr(ord('a')+int(x)) + str(int(y)+1)
                                         move = ','.join(move)
                                     print(self.key, game, move)
-                                    resp = requests.post(self.host + 'submit_move_bot/', data = {'bot_key': self.key, 'game_id': game,  'action': move})
+                                    while True:
+                                        try:
+                                            resp = requests.post(self.host + 'submit_move_bot/', data = {'bot_key': self.key, 'game_id': game,  'action': move})
+                                            break
+                                        except:
+                                            print("reconnecting (post) ...")                                        
                                     print(resp.text)
                                     break
                                
@@ -170,4 +180,9 @@ def main():
     
 
 if __name__ == '__main__':
-    main()
+    while True:
+        try:
+            main()
+        except:
+            print("restarting after crash...")
+    
