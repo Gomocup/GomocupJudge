@@ -99,7 +99,7 @@ class new_protocol(object):
             ds = ds + [self.pp]
             for d in ds:
                 try:
-                    m += d.memory_info()[1]
+                    m += d.memory_full_info().uss
                 except:
                     pass
             self.vms_memory = max(self.vms_memory, m)
