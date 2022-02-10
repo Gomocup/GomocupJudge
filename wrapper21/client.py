@@ -78,6 +78,9 @@ class engine(object):
     def stop(self):
         self.write("END\n")
 
+    def __del__(self):
+        self.stop()
+
 class client(object):
     def __init__(self, host, name, key, ai):
         self.host = host
@@ -101,11 +104,9 @@ class client(object):
                 g = games[game]
                 if g["game_ended"]:
                     if game in self.board:
-                        self.board[game].stop()
                         del self.board[game]
             for game in list(self.board.keys()):
                 if not game in games.keys():
-                    self.board[game].stop()
                     del self.board[game]
             for game in games:
                 g = games[game]
