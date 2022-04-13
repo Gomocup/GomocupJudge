@@ -30,6 +30,7 @@ class new_protocol(object):
         self.working_dir = working_dir
         self.tolerance = tolerance
         self.timeused = 0
+        self.endl = "\r\n"
 
         self.vms_memory = 0
 
@@ -57,13 +58,13 @@ class new_protocol(object):
         queuethread.start()
         
         self.pp = psutil.Process(self.process.pid)
-        self.write_to_process("START " + str(len(self.board)) + "\n")
-        self.write_to_process("INFO timeout_turn " + str(self.timeout_turn) + "\n")
-        self.write_to_process("INFO timeout_match " + str(self.timeout_match) + "\n")
-        self.write_to_process("INFO max_memory " + str(self.max_memory) + "\n")
-        self.write_to_process("INFO game_type " + str(self.game_type) + "\n")
-        self.write_to_process("INFO rule " + str(self.rule) + "\n")
-        self.write_to_process("INFO folder " + str(self.folder) + "\n")
+        self.write_to_process("START " + str(len(self.board)) + self.endl)
+        self.write_to_process("INFO timeout_turn " + str(self.timeout_turn) + self.endl)
+        self.write_to_process("INFO timeout_match " + str(self.timeout_match) + self.endl)
+        self.write_to_process("INFO max_memory " + str(self.max_memory) + self.endl)
+        self.write_to_process("INFO game_type " + str(self.game_type) + self.endl)
+        self.write_to_process("INFO rule " + str(self.rule) + self.endl)
+        self.write_to_process("INFO folder " + str(self.folder) + self.endl)
         self.suspend()
 
     def init_board(self, board):
@@ -167,33 +168,33 @@ class new_protocol(object):
         self.piece[len(self.piece)+1] = (x,y)
         self.board[x][y] = (len(self.piece), 3 - self.color)
 
-        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
-        self.write_to_process("TURN " + str(x) + "," + str(y) + "\n")
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + self.endl)
+        self.write_to_process("TURN " + str(x) + "," + str(y) + self.endl)
 
         return self.wait()
 
     def start(self):
-        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
-        self.write_to_process("BOARD\n")
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + self.endl)
+        self.write_to_process("BOARD" + self.endl)
         for i in xrange(1, len(self.piece)+1):
-            self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + "," + str(self.board[self.piece[i][0]][self.piece[i][1]][1]) + "\n")
-        self.write_to_process("DONE\n")
+            self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + "," + str(self.board[self.piece[i][0]][self.piece[i][1]][1]) + self.endl)
+        self.write_to_process("DONE" + self.endl)
 
         return self.wait()
 
     def swap2board(self):
-        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + "\n")
-        self.write_to_process("SWAP2BOARD\n")
+        self.write_to_process("INFO time_left " + str(self.timeout_match - self.timeused) + self.endl)
+        self.write_to_process("SWAP2BOARD" + self.endl)
         for i in xrange(1, len(self.piece)+1):
-            self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + "\n")
-        self.write_to_process("DONE\n")
+            self.process.stdin.write(str(self.piece[i][0]) + "," + str(self.piece[i][1]) + self.endl)
+        self.write_to_process("DONE" + self.endl)
 
         return self.wait(special_rule = "swap2")
 
     def clean(self):
         self.resume()
         
-        self.write_to_process("END\n")
+        self.write_to_process("END" + self.endl)
         time.sleep(0.5)
         if self.process.poll() is None:
             #self.process.kill()
