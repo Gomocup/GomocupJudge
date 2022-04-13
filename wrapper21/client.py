@@ -78,6 +78,7 @@ class engine(object):
     def stop(self):
         self.write("END\n")
 
+
 class client(object):
     def __init__(self, host, name, key, ai):
         self.host = host
@@ -179,9 +180,17 @@ def main():
     args = parser.parse_args()
     while True:
         try:
-            client(host=args.host, name=args.name, key=args.key, ai=args.ai).listen()
+            wrapper = client(host=args.host, name=args.name, key=args.key, ai=args.ai)
+            wrapper.listen()
         except:
             print("restarting after crash...")
+            
+        try:
+            for game in list(wrapper.board.keys()):
+                wrapper.board[game].stop()
+                del wrapper.board[game]
+        except:
+            pass
     
 
 if __name__ == '__main__':
