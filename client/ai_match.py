@@ -140,25 +140,44 @@ class ai_match(object):
         ny = [1, 0,  1, 1]
         for d in range(4):
             c = 1
+            blocked = 0
             _x, _y = x, y
             for i in range(1,6):
                 _x += nx[d]
                 _y += ny[d]
-                if _x<0 or _x>=self.board_size: break
-                if _y<0 or _y>=self.board_size: break
-                if self.board[_x][_y] != self.board[x][y]: break
+                if _x<0 or _x>=self.board_size:
+                    blocked += 1
+                    break
+                if _y<0 or _y>=self.board_size:
+                    blocked += 1
+                    break
+                if self.board[_x][_y] != self.board[x][y]:
+                    if self.board[_x][_y] != 0:
+                        blocked += 1
+                    break
                 c += 1
             _x, _y = x, y
             for i in range(1,6):
                 _x -= nx[d]
                 _y -= ny[d]
-                if _x<0 or _x>=self.board_size: break
-                if _y<0 or _y>=self.board_size: break
-                if self.board[_x][_y] != self.board[x][y]: break
+                if _x<0 or _x>=self.board_size:
+                    blocked += 1
+                    break
+                if _y<0 or _y>=self.board_size:
+                    blocked += 1
+                    break
+                if self.board[_x][_y] != self.board[x][y]:
+                    if self.board[_x][_y] != 0:
+                        blocked += 1
+                    break
                 c += 1
             if (self.rule == 0 or self.rule == 4) and c >= 5:
                 return 1
             if self.rule == 1 and c == 5:
+                return 1
+            if self.rule == 9 and c == 5 and blocked < 2:
+                return 1
+            if self.rule == 8 and (c > 5 or (c==5 and blocked < 2)):
                 return 1
         return 0        
 
