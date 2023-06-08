@@ -161,10 +161,8 @@ class ai_match(object):
                 _x -= nx[d]
                 _y -= ny[d]
                 if _x<0 or _x>=self.board_size:
-                    blocked += 1
                     break
                 if _y<0 or _y>=self.board_size:
-                    blocked += 1
                     break
                 if self.board[_x][_y] != self.board[x][y]:
                     if self.board[_x][_y] != 0:
