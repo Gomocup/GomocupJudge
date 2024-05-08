@@ -6,18 +6,21 @@ import os
 from threading import Timer
 from utility import *
 
+
 class old_protocol(object):
-    def __init__(self,
-                 cmd,
-                 board,
-                 timeout_turn = 30*1000,
-                 timeout_match = 180*1000,
-                 max_memory = 350*1024*1024,
-                 game_type = 1,
-                 rule = 0,
-                 folder = "./",
-                 working_dir = "./",
-                 tolerance = 1000):
+    def __init__(
+        self,
+        cmd,
+        board,
+        timeout_turn=30 * 1000,
+        timeout_match=180 * 1000,
+        max_memory=350 * 1024 * 1024,
+        game_type=1,
+        rule=0,
+        folder="./",
+        working_dir="./",
+        tolerance=1000,
+    ):
         self.cmd = cmd
         self.board = copy.deepcopy(board)
         self.timeout_turn = timeout_turn
@@ -31,18 +34,27 @@ class old_protocol(object):
         self.timeused = 0
 
         self.vms_memory = 0
-        
+
         self.color = 1
         self.piece = {}
-        for i in xrange(len(board)):
-            for j in xrange(len(board[i])):
+        for i in range(len(board)):
+            for j in range(len(board[i])):
                 if board[i][j][0] != 0:
-                    self.piece[board[i][j][0]] = (i,j)
-        
+                    self.piece[board[i][j][0]] = (i, j)
+
     def run(self):
-        timeout_sec = (self.tolerance + min((self.timeout_match - self.timeused), self.timeout_turn)) / 1000.
+        timeout_sec = (
+            self.tolerance
+            + min((self.timeout_match - self.timeused), self.timeout_turn)
+        ) / 1000.0
         start = time.time()
-        proc = subprocess.Popen(shlex.split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.working_dir, shell=False)
+        proc = subprocess.Popen(
+            shlex.split(self.cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=self.working_dir,
+            shell=False,
+        )
         try:
             pp = psutil.Process(proc.pid)
             m = 0
@@ -56,12 +68,13 @@ class old_protocol(object):
             self.vms_memory = max(self.vms_memory, m)
         except:
             pass
+
         def kill_proc(p):
             _pp = psutil.Process(p.pid)
             for pp in _pp.children(recursive=True):
                 pp.kill()
             _pp.kill()
-                
+
         timer = Timer(timeout_sec, kill_proc, [proc])
         try:
             timer.start()
@@ -69,18 +82,18 @@ class old_protocol(object):
         finally:
             timer.cancel()
         end = time.time()
-        self.timeused += int(max(0, end-start-0.01)*1000)
-        if end-start >= timeout_sec:
-            raise Exception("TLE")
+        self.timeused += int(max(0, end - start - 0.01) * 1000)
+        if end - start >= timeout_sec:
+            raise RuntimeError("TLE")
         if self.vms_memory > self.max_memory:
-            raise Exception("MLE")
-        if get_dir_size(self.folder) > 70*1024*1024:
-            raise Exception("FLE")
+            raise RuntimeError("MLE")
+        if get_dir_size(self.folder) > 70 * 1024 * 1024:
+            raise RuntimeError("FLE")
 
     def write_plocha(self):
         f = open(os.path.join(self.working_dir, "PLOCHA.DAT"), "w")
-        for i in xrange(len(self.board)):
-            for j in xrange(len(self.board[i])):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
                 if self.board[i][j][1] == 0:
                     f.write("-")
                 elif self.board[i][j][1] == 1:
@@ -133,10 +146,10 @@ class old_protocol(object):
         return int(l[1]), int(l[0])
 
     def turn(self, x, y):
-        self.piece[len(self.piece)+1] = (x,y)
+        self.piece[len(self.piece) + 1] = (x, y)
         self.board[x][y] = (len(self.piece), 3 - self.color)
         return self.start()
-        
+
     def start(self):
         self.write_plocha()
         self.write_tah()
@@ -145,8 +158,8 @@ class old_protocol(object):
         self.write_msg()
         self.run()
         msg = self.read_msg()
-        x,y = self.read_tah()
-        self.piece[len(self.piece)+1] = (x,y)
+        x, y = self.read_tah()
+        self.piece[len(self.piece) + 1] = (x, y)
         self.board[x][y] = (len(self.piece), self.color)
         return msg, x, y
 
@@ -156,26 +169,28 @@ class old_protocol(object):
         os.remove(os.path.join(self.working_dir, "TIMEOUTS.DAT"))
         os.remove(os.path.join(self.working_dir, "INFO.DAT"))
         os.remove(os.path.join(self.working_dir, "PLOCHA.DAT"))
-    
-    
+
+
 def main():
     engine = old_protocol(
-        cmd = "C:/Kai/git/GomocupJudge/engine/pisq7.exe",
-        board = [[(0,0) for i in xrange(20)] for j in xrange(20)],
-        timeout_turn = 1000,
-        timeout_match = 100000,
-        max_memory = 350*1024*1024,
-        game_type = 1,
-        rule = 0,
-        folder = "C:/Kai/git/GomocupJudge/tmp",
-        working_dir = "C:/Kai/git/GomocupJudge/engine",
-        tolerance = 1000)
+        cmd="C:/Kai/git/GomocupJudge/engine/pisq7.exe",
+        board=[[(0, 0) for i in range(20)] for j in range(20)],
+        timeout_turn=1000,
+        timeout_match=100000,
+        max_memory=350 * 1024 * 1024,
+        game_type=1,
+        rule=0,
+        folder="C:/Kai/git/GomocupJudge/tmp",
+        working_dir="C:/Kai/git/GomocupJudge/engine",
+        tolerance=1000,
+    )
 
     msg, x, y = engine.start()
 
-    print msg, x, y
+    print(msg, x, y)
 
     engine.clean()
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     main()

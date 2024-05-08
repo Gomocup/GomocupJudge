@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "C:\\Program Files\\Python\\Python27\\python.exe",
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+}

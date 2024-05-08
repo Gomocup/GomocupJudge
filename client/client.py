@@ -5,11 +5,12 @@ import zipfile
 import shutil
 import platform
 import argparse
-import sys
 import time
+import base64
 
 from ai_match import ai_match
 from utility import *
+
 
 class client(object):
     def __init__(self, host, port, working_dir, debug, special_rule, blacklist):
@@ -30,26 +31,26 @@ class client(object):
             os.mkdir(self.match_dir)
         if not os.path.isdir(self.folder_dir):
             os.mkdir(self.folder_dir)
-            
+
         self.engine = []
         for fname in os.listdir(self.engine_dir):
             if fname.lower().endswith(".zip") or fname.lower().endswith(".exe"):
                 self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
-        self.is_os_64bit = platform.machine().endswith('64')
-        
+        self.is_os_64bit = platform.machine().endswith("64")
+
         self.settings = {}
         self.settings["real_time_pos"] = 0
         self.settings["real_time_message"] = 0
-        #self.settings["allow pondering"] = 0
-        #self.settings[""] = 0
+        # self.settings["allow pondering"] = 0
+        # self.settings[""] = 0
         self.settings["send"] = self.send
         self.settings["recv"] = self.recv
         self.display_info()
 
     def display_info(self):
-        print 'System is '+ ('64' if self.is_os_64bit else '32') + 'bit'
+        print("System is " + ("64" if self.is_os_64bit else "32") + "bit")
         for engine in self.engine:
-            print engine[0], engine[1]
+            print(engine[0], engine[1])
 
     def md5(self, fname):
         hash_md5 = hashlib.md5()
@@ -72,7 +73,7 @@ class client(object):
         msg = msg.replace("\n", "")
         if self.debug:
             self.debug_log("send: " + msg + "\n")
-        self.client_socket.send(msg + "\n")
+        self.client_socket.send((msg + "\n").encode())
 
     def _recv(self, size):
         try:
@@ -80,17 +81,17 @@ class client(object):
         except:
             self.buf_socket = ""
 
-        for i in xrange(len(self.buf_socket)):
+        for i in range(len(self.buf_socket)):
             if self.buf_socket[i] == "\n":
                 ret = self.buf_socket[:i]
-                self.buf_socket = self.buf_socket[i+1:]
+                self.buf_socket = self.buf_socket[i + 1 :]
                 return ret
-        
-        buf = self.client_socket.recv(size)
+
+        buf = self.client_socket.recv(size).decode()
         if self.debug:
-            self.debug_log("recv("+str(size)+"): " + buf + "\n")
+            self.debug_log("recv(" + str(size) + "): " + buf + "\n")
         self.buf_socket = self.buf_socket + buf
-        
+
         return None
 
     def recv(self, size):
@@ -99,12 +100,12 @@ class client(object):
             if ret is not None:
                 return ret
             time.sleep(0.01)
-    
+
     def listen(self):
         while True:
-            buf = self.recv(16*1024*1024)
-            #print '\"' + buf + '\"'
-            #sys.stdout.flush()
+            buf = self.recv(16 * 1024 * 1024)
+            # print('\"' + buf + '\"')
+            # sys.stdout.flush()
             if buf.lower().startswith("blacklist"):
                 self.send("blacklist " + self.blacklist)
             elif buf.lower().startswith("engine exist"):
@@ -116,15 +117,15 @@ class client(object):
                         break
                 self.send("yes" if exist else "no")
             elif buf.lower().startswith("engine send"):
-                base64fname, base64engine = buf.strip().split(' ')[-2:]
-                fname = base64fname.decode('base64')
-                engine = base64engine.decode('base64')
+                base64fname, base64engine = buf.strip().split(" ")[-2:]
+                fname = base64.b64decode(base64fname.encode()).decode()
+                engine = base64.b64decode(base64engine.encode())
                 with open(os.path.join(self.engine_dir, fname), "wb") as f:
                     f.write(engine)
                 self.engine += [(fname, self.md5(os.path.join(self.engine_dir, fname)))]
                 self.send("received")
             elif buf.lower().startswith("match new"):
-                buf = buf.strip().split(' ')[2:]
+                buf = buf.strip().split(" ")[2:]
                 md5_1 = buf[0]
                 md5_2 = buf[1]
                 timeout_turn = int(buf[2])
@@ -145,11 +146,18 @@ class client(object):
                         try:
                             os.mkdir(os.path.join(self.match_dir, engine[1]))
                             if engine[0].lower().endswith(".zip"):
-                                zip_ref = zipfile.ZipFile(os.path.join(self.engine_dir, engine[0]), 'r')
-                                zip_ref.extractall(os.path.join(self.match_dir, engine[1]))
+                                zip_ref = zipfile.ZipFile(
+                                    os.path.join(self.engine_dir, engine[0]), "r"
+                                )
+                                zip_ref.extractall(
+                                    os.path.join(self.match_dir, engine[1])
+                                )
                                 zip_ref.close()
                             else:
-                                shutil.copy(os.path.join(self.engine_dir, engine[0]), os.path.join(self.match_dir, engine[1]))
+                                shutil.copy(
+                                    os.path.join(self.engine_dir, engine[0]),
+                                    os.path.join(self.match_dir, engine[1]),
+                                )
                             os.mkdir(os.path.join(self.folder_dir, engine[1]))
                         except:
                             pass
@@ -168,54 +176,78 @@ class client(object):
                             else:
                                 if not has_pbrain:
                                     exe_list += [fname]
-                            
+
                     if len(exe_list) > 1:
                         for fname in exe_list:
-                            if (self.is_os_64bit and '64' in fname) or (not self.is_os_64bit and '64' not in fname):
-                                cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
-                                protocol = 'new' if fname.lower().startswith('pbrain') else 'old'
+                            if (self.is_os_64bit and "64" in fname) or (
+                                not self.is_os_64bit and "64" not in fname
+                            ):
+                                cmd = os.path.join(self.match_dir, md5, fname).replace(
+                                    "\\", "/"
+                                )
+                                protocol = (
+                                    "new"
+                                    if fname.lower().startswith("pbrain")
+                                    else "old"
+                                )
                                 return cmd, protocol
                     fname = exe_list[0]
                     cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
-                    protocol = 'new' if fname.lower().startswith('pbrain') else 'old'
+                    protocol = "new" if fname.lower().startswith("pbrain") else "old"
                     return cmd, protocol
-                    
+
                 cmd_1, protocol_1 = get_cmd_protocol(md5_1)
                 cmd_2, protocol_2 = get_cmd_protocol(md5_2)
 
-                print cmd_1, protocol_1
-                print cmd_2, protocol_2
-                
-                game = ai_match(board_size = board_size,
-                                opening = str_to_pos(opening),
-                                cmd_1 = cmd_1,
-                                cmd_2 = cmd_2,
-                                protocol_1 = protocol_1,
-                                protocol_2 = protocol_2,
-                                timeout_turn_1 = timeout_turn,
-                                timeout_turn_2 = timeout_turn,
-                                timeout_match_1 = timeout_match,
-                                timeout_match_2 = timeout_match,
-                                max_memory_1 = max_memory,
-                                max_memory_2 = max_memory,
-                                game_type = game_type,
-                                rule = rule,
-                                folder_1 = os.path.join(self.folder_dir, md5_1),
-                                folder_2 = os.path.join(self.folder_dir, md5_2),
-                                working_dir_1 = os.path.join(self.match_dir, md5_1),
-                                working_dir_2 = os.path.join(self.match_dir, md5_2),
-                                tolerance = tolerance,
-                                settings = self.settings,
-                                special_rule = self.special_rule)
+                print(cmd_1, protocol_1)
+                print(cmd_2, protocol_2)
+
+                game = ai_match(
+                    board_size=board_size,
+                    opening=str_to_pos(opening),
+                    cmd_1=cmd_1,
+                    cmd_2=cmd_2,
+                    protocol_1=protocol_1,
+                    protocol_2=protocol_2,
+                    timeout_turn_1=timeout_turn,
+                    timeout_turn_2=timeout_turn,
+                    timeout_match_1=timeout_match,
+                    timeout_match_2=timeout_match,
+                    max_memory_1=max_memory,
+                    max_memory_2=max_memory,
+                    game_type=game_type,
+                    rule=rule,
+                    folder_1=os.path.join(self.folder_dir, md5_1),
+                    folder_2=os.path.join(self.folder_dir, md5_2),
+                    working_dir_1=os.path.join(self.match_dir, md5_1),
+                    working_dir_2=os.path.join(self.match_dir, md5_2),
+                    tolerance=tolerance,
+                    settings=self.settings,
+                    special_rule=self.special_rule,
+                )
                 msg, psq, result, endby = game.play()
 
-                #print msg, psq
-                print result, endby
-                
-                self.send("match finished " + psq_to_psq(psq, board_size).encode("base64").replace("\n", "").replace("\r", "") + \
-                                        " " + msg.encode("base64").replace("\n", "").replace("\r", "") + " " + str(result) + " " + str(endby))
-                self.recv(16) #received
-                
+                # print(msg, psq)
+                print(result, endby)
+
+                self.send(
+                    "match finished "
+                    + base64.b64encode(psq_to_psq(psq, board_size).encode())
+                    .decode()
+                    .replace("\n", "")
+                    .replace("\r", "")
+                    + " "
+                    + base64.b64encode(msg.encode())
+                    .decode()
+                    .replace("\n", "")
+                    .replace("\r", "")
+                    + " "
+                    + str(result)
+                    + " "
+                    + str(endby)
+                )
+                self.recv(16)  # received
+
             elif buf.lower().startswith("set real_time_pos"):
                 self.settings["real_time_pos"] = int(buf.strip().split()[-1])
                 self.send("ok")
@@ -223,32 +255,46 @@ class client(object):
                 self.settings["real_time_message"] = int(buf.strip().split()[-1])
                 self.send("ok")
             elif buf.lower().startswith("pause"):
-                #TODO
+                # TODO
                 self.send("ok")
             elif buf.lower().startswith("continue"):
-                #TODO
+                # TODO
                 self.send("ok")
             elif buf.lower().startswith("terminate"):
-                #TODO
+                # TODO
                 self.send("ok")
             else:
                 self.send("unknown command")
                 continue
 
+
 def main():
-    parser = argparse.ArgumentParser(description='GomocupJudge Client')
+    parser = argparse.ArgumentParser(description="GomocupJudge Client")
 
     parser.add_argument("--host", dest="host", action="store", required=True)
     parser.add_argument("--port", dest="port", action="store", required=True)
     parser.add_argument("--dir", dest="working_dir", action="store", required=True)
-    parser.add_argument("--debug", dest="debug", action="store", default=False, required=False)
-    parser.add_argument("--rule", dest="special_rule", action="store", default="", required=False)
-    parser.add_argument("--blacklist", dest="blacklist", action="store", default="None", required=False)
-    
+    parser.add_argument(
+        "--debug", dest="debug", action="store", default=False, required=False
+    )
+    parser.add_argument(
+        "--rule", dest="special_rule", action="store", default="", required=False
+    )
+    parser.add_argument(
+        "--blacklist", dest="blacklist", action="store", default="None", required=False
+    )
+
     args = parser.parse_args()
 
-    client(host=args.host, port=int(args.port), working_dir = args.working_dir, debug = args.debug, special_rule = args.special_rule, blacklist = args.blacklist).listen()
+    client(
+        host=args.host,
+        port=int(args.port),
+        working_dir=args.working_dir,
+        debug=args.debug,
+        special_rule=args.special_rule,
+        blacklist=args.blacklist,
+    ).listen()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
