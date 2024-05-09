@@ -8,7 +8,7 @@ import re
 import os
 import hashlib
 import base64
-from queue import Queue
+from queue import Queue, Empty
 import subprocess
 import random
 import paramiko
@@ -794,7 +794,7 @@ def parse_pos(pos, opening):
     len_opening = opening_length(opening)
     spos = pos.strip()
     if spos:
-        times = list( map(lambda x: int(x.split(",")[-1]), pos.strip().split("\n")))[
+        times = list(map(lambda x: int(x.split(",")[-1]), pos.strip().split("\n")))[
             len_opening:
         ]
     else:
@@ -1197,7 +1197,12 @@ def recv_client(conn, addr):
 
 def output_client():
     while True:
-        addr, outstr = output_queue.get()
+        while True:
+            try:
+                addr, outstr = output_queue.get(timeout=1.0)
+                break
+            except Empty:
+                continue
         out_str = repr(("output", addr, outstr))
         print_log(out_str, net_log_file)
         if addr in trecvs.keys():
@@ -1214,7 +1219,7 @@ def accept_client(host, port):
     while True:
         conn, addr = s.accept()
         addr = addr[0] + ":" + str(addr[1])
-        trecv = threading.Thread(target=recv_client, args=(conn, addr))
+        trecv = threading.Thread(target=recv_client, args=(conn, addr), daemon=True)
         connect_addr(addr, trecv, conn)
         trecv.start()
         clients_state[addr] = Client_state(curpath, addr)
@@ -1399,7 +1404,12 @@ def ssh_upload_process():
     global ftp_queue
     if remote_info:
         while True:
-            upfile, is_online = ftp_queue.get()
+            while True:
+                try:
+                    upfile, is_online = ftp_queue.get(timeout=1.0)
+                    break
+                except Empty:
+                    continue
             try:
                 if is_online:
                     r_path = remote_info[3]
@@ -1534,19 +1544,24 @@ if __name__ == "__main__":
 
     host = "0.0.0.0"
     port = int(sys.argv[2])
-    taccept = threading.Thread(target=accept_client, args=(host, port))
+    taccept = threading.Thread(target=accept_client, args=(host, port), daemon=True)
     taccept.start()
-    toutput = threading.Thread(target=output_client)
+    toutput = threading.Thread(target=output_client, daemon=True)
     toutput.start()
-    tend = threading.Thread(target=check_end)
+    tend = threading.Thread(target=check_end, daemon=True)
     tend.start()
-    tftp = threading.Thread(target=ssh_upload_process)
+    tftp = threading.Thread(target=ssh_upload_process, daemon=True)
     tftp.start()
 
     print_log("Server started.")
 
     while True:
-        cur_input = input_queue.get()
+        while True:
+            try:
+                cur_input = input_queue.get(timeout=1.0)
+                break
+            except Empty:
+                continue
         print(cur_input)
         inaddr = cur_input[0]
         instr = cur_input[1].strip()
