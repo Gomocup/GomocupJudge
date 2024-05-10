@@ -1404,12 +1404,7 @@ def ssh_upload_process():
     global ftp_queue
     if remote_info:
         while True:
-            while True:
-                try:
-                    upfile, is_online = ftp_queue.get(timeout=1.0)
-                    break
-                except Empty:
-                    continue
+            upfile, is_online = ftp_queue.get()
             try:
                 if is_online:
                     r_path = remote_info[3]
