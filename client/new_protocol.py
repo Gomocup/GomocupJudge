@@ -49,15 +49,13 @@ class new_protocol(object):
             shell=False,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            bufsize=1,
             close_fds="posix" in sys.builtin_module_names,
             cwd=self.working_dir,
-            universal_newlines=True,
         )
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b""):
-                queue.put(line)
+                queue.put(line.decode())
             out.close()
 
         self.queue = Queue()
@@ -90,7 +88,7 @@ class new_protocol(object):
     def write_to_process(self, msg):
         # print('===>', msg)
         # sys.stdout.flush()
-        self.process.stdin.write(msg)
+        self.process.stdin.write(msg.encode())
         self.process.stdin.flush()
 
     def suspend(self):
@@ -198,12 +196,14 @@ class new_protocol(object):
         self.write_to_process("BOARD" + self.endl)
         for i in range(1, len(self.piece) + 1):
             self.process.stdin.write(
-                str(self.piece[i][0])
-                + ","
-                + str(self.piece[i][1])
-                + ","
-                + str(self.board[self.piece[i][0]][self.piece[i][1]][1])
-                + self.endl
+                (
+                    str(self.piece[i][0])
+                    + ","
+                    + str(self.piece[i][1])
+                    + ","
+                    + str(self.board[self.piece[i][0]][self.piece[i][1]][1])
+                    + self.endl
+                ).encode()
             )
         self.write_to_process("DONE" + self.endl)
 
@@ -216,7 +216,9 @@ class new_protocol(object):
         self.write_to_process("SWAP2BOARD" + self.endl)
         for i in range(1, len(self.piece) + 1):
             self.process.stdin.write(
-                str(self.piece[i][0]) + "," + str(self.piece[i][1]) + self.endl
+                (
+                    str(self.piece[i][0]) + "," + str(self.piece[i][1]) + self.endl
+                ).encode()
             )
         self.write_to_process("DONE" + self.endl)
 
