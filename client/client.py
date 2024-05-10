@@ -286,14 +286,19 @@ def main():
 
     args = parser.parse_args()
 
-    client(
-        host=args.host,
-        port=int(args.port),
-        working_dir=args.working_dir,
-        debug=args.debug,
-        special_rule=args.special_rule,
-        blacklist=args.blacklist,
-    ).listen()
+    try:
+        client(
+            host=args.host,
+            port=int(args.port),
+            working_dir=args.working_dir,
+            debug=args.debug,
+            special_rule=args.special_rule,
+            blacklist=args.blacklist,
+        ).listen()
+    except ConnectionResetError:
+        print("Connection has been reset by the server.")
+    except ConnectionRefusedError:
+        print("Connection has been refused by the server.")
 
 
 if __name__ == "__main__":
