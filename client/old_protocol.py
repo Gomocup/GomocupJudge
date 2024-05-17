@@ -160,7 +160,10 @@ class old_protocol(object):
         msg = self.read_msg()
         x, y = self.read_tah()
         self.piece[len(self.piece) + 1] = (x, y)
-        self.board[x][y] = (len(self.piece), self.color)
+        if x >= 0 and x < len(self.board) and y >= 0 and y < len(self.board[0]):
+            self.board[x][y] = (len(self.piece), self.color)
+        else:
+            raise RuntimeError("Invalid Move")
         return msg, x, y
 
     def clean(self):
