@@ -3,7 +3,7 @@
 ### Introduction
 GomocupJudge is a new manager for Gomocup **under development**.
 
-* Tested in Python 2.7
+* Tested in Python 3.8
 
 ### Protocol
 
