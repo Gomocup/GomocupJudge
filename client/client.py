@@ -25,6 +25,8 @@ class client(object):
         self.engine_dir = os.path.join(self.working_dir, "engine")
         self.match_dir = os.path.join(self.working_dir, "match")
         self.folder_dir = os.path.join(self.match_dir, "folder")
+        if not os.path.isdir(self.working_dir):
+            os.mkdir(self.working_dir)
         if not os.path.isdir(self.engine_dir):
             os.mkdir(self.engine_dir)
         if not os.path.isdir(self.match_dir):
