@@ -908,7 +908,7 @@ class Client_state:
         fpos.close()
         if upload_offline_result:
             ssh_upload(pos_path, False)
-        fmessage = open(result_path + slash + "message.txt", "a")
+        fmessage = open(result_path + slash + "message.txt", "a", encoding="utf-8")
         fmessage.write(message)
         fmessage.write("\n--> " + pos_path + "\n\n")
         fmessage.close()

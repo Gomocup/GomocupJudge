@@ -55,7 +55,7 @@ class new_protocol(object):
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b""):
-                queue.put(line.decode())
+                queue.put(line.decode(errors="ignore"))
             out.close()
 
         self.queue = Queue()
@@ -175,7 +175,10 @@ class new_protocol(object):
 
         if special_rule == "":
             self.piece[len(self.piece) + 1] = (x, y)
-            self.board[x][y] = (len(self.piece), self.color)
+            if x >= 0 and x < len(self.board) and y >= 0 and y < len(self.board[0]):
+                self.board[x][y] = (len(self.piece), self.color)
+            else:
+                raise RuntimeError("Invalid Move")
         return msg, x, y
 
     def turn(self, x, y):
