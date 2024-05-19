@@ -7,21 +7,28 @@ from threading import Thread
 import subprocess, shlex
 import sys
 
+
 class engine(object):
     def __init__(self, ai, moves, cando, timeleft):
-        self.process = subprocess.Popen(shlex.split(ai),
-                                                    shell=False,
-                                                    stdin=subprocess.PIPE,
-                                                    stdout=subprocess.PIPE,
-                                                    bufsize=1,
-                                                    close_fds='posix' in sys.builtin_module_names,
-                                                    cwd=".")
+        self.process = subprocess.Popen(
+            shlex.split(ai),
+            shell=False,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            bufsize=1,
+            close_fds="posix" in sys.builtin_module_names,
+            cwd=".",
+        )
+
         def enqueue_output(out, q):
-            for line in iter(out.readline, b''):
+            for line in iter(out.readline, b""):
                 q.put(line)
             out.close()
+
         self.queue = Queue()
-        queuethread = Thread(target=enqueue_output, args=(self.process.stdout, self.queue))
+        queuethread = Thread(
+            target=enqueue_output, args=(self.process.stdout, self.queue)
+        )
         queuethread.daemon = True
         queuethread.start()
         self.boarded = False
@@ -41,9 +48,16 @@ class engine(object):
             self.write("BOARD\n")
             for i in range(len(moves)):
                 m = moves[i]
-                self.write(str(m[0]) + "," + str(m[1]) + "," + str(1+(len(moves)-i)%2) + "\n")
+                self.write(
+                    str(m[0])
+                    + ","
+                    + str(m[1])
+                    + ","
+                    + str(1 + (len(moves) - i) % 2)
+                    + "\n"
+                )
             self.boarded = True
-        self.write("DONE\n")            
+        self.write("DONE\n")
 
     def move(self, moves, cando, timeleft):
         self.write("INFO time_left " + str(timeleft) + "\n")
@@ -51,19 +65,26 @@ class engine(object):
             self.write("SWAP2BOARD\n")
             for m in moves:
                 self.write(str(m[0]) + "," + str(m[1]) + "\n")
-            self.write("DONE\n")  
+            self.write("DONE\n")
         elif self.boarded:
             self.write("TURN " + str(moves[-1][0]) + "," + str(moves[-1][1]) + "\n")
         else:
             self.write("BOARD\n")
             for i in range(len(moves)):
                 m = moves[i]
-                self.write(str(m[0]) + "," + str(m[1]) + "," + str(1+(len(moves)-i)%2) + "\n")
+                self.write(
+                    str(m[0])
+                    + ","
+                    + str(m[1])
+                    + ","
+                    + str(1 + (len(moves) - i) % 2)
+                    + "\n"
+                )
             self.boarded = True
-            self.write("DONE\n")  
-        
+            self.write("DONE\n")
+
     def write(self, msg):
-        #print("==>", msg)
+        # print("==>", msg)
         self.process.stdin.write(msg.encode())
         self.process.stdin.flush()
 
@@ -74,7 +95,7 @@ class engine(object):
             return None
         else:
             return buf
-        
+
     def stop(self):
         self.write("END\n")
 
@@ -89,14 +110,14 @@ class client(object):
         self.msgs = {}
 
     def listen(self):
-        
+
         while True:
             while True:
                 try:
-                    resp = requests.get(self.host + 'game_bot/' + self.key + '/')
+                    resp = requests.get(self.host + "game_bot/" + self.key + "/")
                     break
                 except:
-                    print("reconnecting (get) ...") 
+                    print("reconnecting (get) ...")
             games = json.loads(resp.text)
             for game in games:
                 g = games[game]
@@ -110,21 +131,24 @@ class client(object):
                     del self.board[game]
             for game in games:
                 g = games[game]
-                if self.name == g["player_1"]['username']:
+                if self.name == g["player_1"]["username"]:
                     timeleft = g["player_1"]["time_turn_left"]
                 else:
                     timeleft = g["player_2"]["time_turn_left"]
                 timeleft *= 1000
-                if (self.name == g["player_1"]['username'] and not g["swapped"]) or \
-                   (self.name == g["player_2"]['username'] and g["swapped"]):
+                if (self.name == g["player_1"]["username"] and not g["swapped"]) or (
+                    self.name == g["player_2"]["username"] and g["swapped"]
+                ):
                     m = 0
                 else:
                     m = 1
 
                 if len(g["moves"]) % 2 == m:
                     if game not in self.board:
-                        self.board[game] = engine(self.ai, g["moves"], g["can_do"], timeleft)
-                        self.msgs[game] = ''
+                        self.board[game] = engine(
+                            self.ai, g["moves"], g["can_do"], timeleft
+                        )
+                        self.msgs[game] = ""
                     else:
                         self.board[game].move(g["moves"], g["can_do"], timeleft)
 
@@ -136,12 +160,14 @@ class client(object):
                                 self.msgs[game] = self.msgs[game].split("\n")
                                 msg = self.msgs[game][0].strip()
                                 self.msgs[game] = "\n".join(self.msgs[game][1:])
-                                if msg.startswith("MESSAGE") or \
-                                   msg.startswith("DEBUG") or \
-                                   msg.startswith("ERROR") or \
-                                   msg.startswith("SUGGEST") or \
-                                   msg.startswith("UNKNOWN") or \
-                                   msg.startswith("OK"):
+                                if (
+                                    msg.startswith("MESSAGE")
+                                    or msg.startswith("DEBUG")
+                                    or msg.startswith("ERROR")
+                                    or msg.startswith("SUGGEST")
+                                    or msg.startswith("UNKNOWN")
+                                    or msg.startswith("OK")
+                                ):
                                     print(msg)
                                 else:
                                     msg = msg.lower()
@@ -151,28 +177,39 @@ class client(object):
                                         move = msg.split()
                                         print(msg)
                                         for i in range(len(move)):
-                                            x,y = move[i].split(",")
-                                            move[i] = chr(ord('a')+int(x)) + str(int(y)+1)
-                                        move = ','.join(move)
+                                            x, y = move[i].split(",")
+                                            move[i] = chr(ord("a") + int(x)) + str(
+                                                int(y) + 1
+                                            )
+                                        move = ",".join(move)
                                     print(self.key, game, move)
                                     while True:
                                         try:
-                                            resp = requests.post(self.host + 'submit_move_bot/', data = {'bot_key': self.key, 'game_id': game,  'action': move})
+                                            resp = requests.post(
+                                                self.host + "submit_move_bot/",
+                                                data={
+                                                    "bot_key": self.key,
+                                                    "game_id": game,
+                                                    "action": move,
+                                                },
+                                            )
                                             break
                                         except:
-                                            print("reconnecting (post) ...")                                        
+                                            print("reconnecting (post) ...")
                                     print(resp.text)
                                     break
-                               
+
                         time.sleep(0.1)
-                  
-                assert(len(self.board) <= 1) #for Gomocup 2021
-                    
+
+                assert len(self.board) <= 1  # for Gomocup 2021
+
             time.sleep(0.1)
-            
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Gomocup Experimental Tournament Client')
+    parser = argparse.ArgumentParser(
+        description="Gomocup Experimental Tournament Client"
+    )
     parser.add_argument("--host", dest="host", action="store", required=True)
     parser.add_argument("--name", dest="name", action="store", required=True)
     parser.add_argument("--key", dest="key", action="store", required=True)
@@ -184,15 +221,14 @@ def main():
             wrapper.listen()
         except:
             print("restarting after crash...")
-            
+
         try:
             for game in list(wrapper.board.keys()):
                 wrapper.board[game].stop()
                 del wrapper.board[game]
         except:
             pass
-    
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-    

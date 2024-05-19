@@ -9,6 +9,7 @@ import json
 global_timeout = 0.1
 global_retry = 10
 
+
 class server(object):
     def __init__(self, host, port, key):
         self.host = host
@@ -19,13 +20,15 @@ class server(object):
         self.server_socket.bind((host, port))
         self.conn = None
         self.addr = None
+
         def enqueue_output(q):
             while True:
                 q.put(sys.stdin.readline())
             out.close()
+
         self.queue = Queue()
         self.msgqueue = []
-        self.msgstamp = int(str(time.time()).replace('.', ''))
+        self.msgstamp = int(str(time.time()).replace(".", ""))
         self.msgok = set()
         self.timestamp = {}
         self.timestamp["send"] = time.time() - global_timeout
@@ -39,7 +42,7 @@ class server(object):
         for i in range(len(self.buf_socket)):
             if self.buf_socket[i] == "\n":
                 ret = self.buf_socket[:i]
-                self.buf_socket = self.buf_socket[i+1:]
+                self.buf_socket = self.buf_socket[i + 1 :]
                 return ret
         self.conn.settimeout(global_timeout)
         try:
@@ -48,10 +51,11 @@ class server(object):
         except:
             pass
         self.conn.settimeout(None)
-        return None        
+        return None
 
     def _recv_stdin(self):
-        try: buf = self.queue.get_nowait()
+        try:
+            buf = self.queue.get_nowait()
         except Empty:
             pass
         else:
@@ -65,32 +69,39 @@ class server(object):
                 self.conn.send(("ping\n").encode())
                 self.conn.settimeout(None)
                 self.timestamp["ping"] = time.time()
-            assert(time.time() < self.timestamp["connected"] + global_timeout * global_retry)
+            assert (
+                time.time()
+                < self.timestamp["connected"] + global_timeout * global_retry
+            )
         except:
             while True:
                 try:
                     self.server_socket.listen()
                     self.conn, self.addr = self.server_socket.accept()
-                    #print(self.addr, flush=True)
+                    # print(self.addr, flush=True)
                     self.timestamp["connected"] = time.time()
                     self.buf_socket = ""
                     c = 0
                     while c < global_retry:
-                        buf = self._recv_socket(16*1024*1024)
+                        buf = self._recv_socket(16 * 1024 * 1024)
                         if buf is not None:
                             break
                         time.sleep(global_timeout)
                         c += 1
-                    if buf is not None and buf.startswith("ping") and buf[5:].strip() == self.key:
+                    if (
+                        buf is not None
+                        and buf.startswith("ping")
+                        and buf[5:].strip() == self.key
+                    ):
                         break
                 except:
                     pass
-    
+
     def recv(self):
         while True:
             self.reconnect()
             try:
-                ret = self._recv_socket(16*1024*1024)
+                ret = self._recv_socket(16 * 1024 * 1024)
                 if ret is not None:
                     return ["socket", ret]
                 ret = self._recv_stdin()
@@ -119,22 +130,22 @@ class server(object):
         while True:
             buf = self.recv()
             if buf[0] == "socket":
-                #print(buf, flush=True)
+                # print(buf, flush=True)
                 if len(buf[1]) > 0:
                     self.timestamp["connected"] = time.time()
                 if buf[1].startswith("ping"):
                     pass
                 elif buf[1].startswith("msg"):
-                    #print(buf, flush=True)
+                    # print(buf, flush=True)
                     msgid = int(buf[1].split(" ")[1])
-                    msg = ' '.join(buf[1].split(" ")[2:])
+                    msg = " ".join(buf[1].split(" ")[2:])
                     if msgid not in self.msgok:
                         self.msgok.add(msgid)
-                        sys.stdout.write(msg+"\n")
+                        sys.stdout.write(msg + "\n")
                         sys.stdout.flush()
                     try:
                         self.conn.settimeout(global_timeout)
-                        self.conn.send(("ok "+str(msgid)+"\n").encode())
+                        self.conn.send(("ok " + str(msgid) + "\n").encode())
                         self.conn.settimeout(None)
                     except:
                         pass
@@ -144,10 +155,12 @@ class server(object):
                         del self.msgqueue[0]
                         self.timestamp["send"] = time.time() - global_timeout
             elif buf[0] == "stdin":
-                self.msgqueue += [(self.msgstamp, ("msg " + str(self.msgstamp) + " " + buf[1]))]
+                self.msgqueue += [
+                    (self.msgstamp, ("msg " + str(self.msgstamp) + " " + buf[1]))
+                ]
                 self.msgstamp += 1
             self.send()
-            
+
 
 def main():
     fn = sys.argv[0]
@@ -155,11 +168,13 @@ def main():
         fn = fn[:-1]
     fn += "config.json"
     try:
-        with open(fn, "r", encoding='utf8') as f:
+        with open(fn, "r", encoding="utf8") as f:
             config = json.load(f)
     except:
         config = {}
-        parser = argparse.ArgumentParser(description='Gomocup Experimental Tournament Server')
+        parser = argparse.ArgumentParser(
+            description="Gomocup Experimental Tournament Server"
+        )
         parser.add_argument("--host", dest="host", action="store", required=True)
         parser.add_argument("--port", dest="port", action="store", required=True)
         parser.add_argument("--key", dest="key", action="store", required=True)
@@ -167,12 +182,11 @@ def main():
         config["host"] = args.host
         config["port"] = args.port
         config["key"] = args.key
-        with open(fn, "w", encoding='utf8') as f:
+        with open(fn, "w", encoding="utf8") as f:
             json.dump(config, f, indent=2)
-            
-    server(host=config["host"], port=int(config["port"]), key=config["key"]).listen()
-    
-if __name__ == '__main__':
-    main()
 
-        
+    server(host=config["host"], port=int(config["port"]), key=config["key"]).listen()
+
+
+if __name__ == "__main__":
+    main()
