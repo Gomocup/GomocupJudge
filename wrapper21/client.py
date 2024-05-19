@@ -31,6 +31,7 @@ class engine(object):
         )
         queuethread.daemon = True
         queuethread.start()
+        self.buf_std = ""
         self.boarded = False
         self.write("START 15\n")
         self.write("INFO timeout_turn 5400000\n")
@@ -91,10 +92,16 @@ class engine(object):
     def read(self):
         try:
             buf = self.queue.get_nowait().decode()
+            self.buf_std += buf
         except Empty:
-            return None
+            pass
         else:
-            return buf
+            for i in range(len(self.buf_std)):
+                if self.buf_std[i] == '\n':
+                    buf = self.buf_std[:i+1]
+                    self.buf_std = self.buf_std[i+1:]
+                    return buf
+        return None
 
     def stop(self):
         self.write("END\n")
