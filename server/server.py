@@ -1204,7 +1204,10 @@ def output_client():
             except Empty:
                 continue
         out_str = repr(("output", addr, outstr))
-        print_log(out_str, net_log_file)
+        if not outstr.startswith("engine send "):
+            print_log(out_str, net_log_file)
+        else:
+            print_log(repr(("output", addr, "engine send ********")), net_log_file)
         if addr in trecvs.keys():
             conn = trecvs[addr][1]
             conn.sendall((outstr + "\n").encode())
