@@ -122,7 +122,9 @@ class client(object):
         while True:
             while True:
                 try:
-                    resp = requests.get(self.host + "game_bot/" + self.key + "/")
+                    resp = requests.get(
+                        self.host + "game_bot/" + self.key + "/", timeout=10.0
+                    )
                     break
                 except (KeyboardInterrupt, SystemExit):
                     exit(0)
@@ -203,6 +205,7 @@ class client(object):
                                                     "game_id": game,
                                                     "action": move,
                                                 },
+                                                timeout=10.0,
                                             )
                                             break
                                         except (KeyboardInterrupt, SystemExit):
