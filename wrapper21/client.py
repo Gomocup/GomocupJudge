@@ -97,9 +97,9 @@ class engine(object):
             pass
         else:
             for i in range(len(self.buf_std)):
-                if self.buf_std[i] == '\n':
-                    buf = self.buf_std[:i+1]
-                    self.buf_std = self.buf_std[i+1:]
+                if self.buf_std[i] == "\n":
+                    buf = self.buf_std[: i + 1]
+                    self.buf_std = self.buf_std[i + 1 :]
                     return buf
         return None
 
@@ -123,6 +123,8 @@ class client(object):
                 try:
                     resp = requests.get(self.host + "game_bot/" + self.key + "/")
                     break
+                except KeyboardInterrupt:
+                    exit(0)
                 except:
                     print("reconnecting (get) ...")
             games = json.loads(resp.text)
@@ -201,6 +203,8 @@ class client(object):
                                                 },
                                             )
                                             break
+                                        except KeyboardInterrupt:
+                                            exit(0)
                                         except:
                                             print("reconnecting (post) ...")
                                     print(resp.text)
@@ -226,6 +230,8 @@ def main():
         try:
             wrapper = client(host=args.host, name=args.name, key=args.key, ai=args.ai)
             wrapper.listen()
+        except KeyboardInterrupt:
+            exit(0)
         except:
             print("restarting after crash...")
 
@@ -233,6 +239,8 @@ def main():
             for game in list(wrapper.board.keys()):
                 wrapper.board[game].stop()
                 del wrapper.board[game]
+        except KeyboardInterrupt:
+            exit(0)
         except:
             pass
 
