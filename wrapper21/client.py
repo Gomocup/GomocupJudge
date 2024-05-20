@@ -6,6 +6,7 @@ from queue import Queue, Empty
 from threading import Thread
 import subprocess, shlex
 import sys
+import traceback
 
 
 class engine(object):
@@ -126,6 +127,7 @@ class client(object):
                 except KeyboardInterrupt:
                     exit(0)
                 except:
+                    traceback.print_exc()
                     print("reconnecting (get) ...")
             games = json.loads(resp.text)
             for game in games:
@@ -206,6 +208,7 @@ class client(object):
                                         except KeyboardInterrupt:
                                             exit(0)
                                         except:
+                                            traceback.print_exc()
                                             print("reconnecting (post) ...")
                                     print(resp.text)
                                     break
@@ -233,6 +236,7 @@ def main():
         except KeyboardInterrupt:
             exit(0)
         except:
+            traceback.print_exc()
             print("restarting after crash...")
 
         try:
@@ -242,6 +246,7 @@ def main():
         except KeyboardInterrupt:
             exit(0)
         except:
+            traceback.print_exc()
             pass
 
 
