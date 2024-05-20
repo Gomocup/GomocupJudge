@@ -124,7 +124,7 @@ class client(object):
                 try:
                     resp = requests.get(self.host + "game_bot/" + self.key + "/")
                     break
-                except KeyboardInterrupt:
+                except (KeyboardInterrupt, SystemExit):
                     exit(0)
                 except:
                     traceback.print_exc()
@@ -205,7 +205,7 @@ class client(object):
                                                 },
                                             )
                                             break
-                                        except KeyboardInterrupt:
+                                        except (KeyboardInterrupt, SystemExit):
                                             exit(0)
                                         except:
                                             traceback.print_exc()
@@ -233,7 +233,7 @@ def main():
         try:
             wrapper = client(host=args.host, name=args.name, key=args.key, ai=args.ai)
             wrapper.listen()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             exit(0)
         except:
             traceback.print_exc()
@@ -243,7 +243,7 @@ def main():
             for game in list(wrapper.board.keys()):
                 wrapper.board[game].stop()
                 del wrapper.board[game]
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             exit(0)
         except:
             traceback.print_exc()
