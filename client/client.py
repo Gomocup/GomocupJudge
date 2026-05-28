@@ -165,35 +165,111 @@ class client(object):
                             pass
 
                 def get_cmd_protocol(md5):
+                    all_exes = [f for f in os.listdir(os.path.join(self.match_dir, md5)) if f.lower().endswith(".exe")]
+                    if not all_exes:
+                        raise FileNotFoundError("No executable found in engine directory")
+
+                    if len(all_exes) == 1:
+                        fname = all_exes[0]
+                        cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
+                        protocol = "new" if fname.lower().startswith("pbrain") else "old"
+                        return cmd, protocol
+
+                    # Filter based on protocol preference: prefer pbrain (new) over non-pbrain (old)
                     exe_list = []
                     has_pbrain = False
-                    for fname in os.listdir(os.path.join(self.match_dir, md5)):
-                        if fname.lower().endswith(".exe"):
-                            if fname.lower().startswith("pbrain"):
-                                if has_pbrain:
-                                    exe_list += [fname]
-                                else:
-                                    exe_list = [fname]
-                                    has_pbrain = True
+                    for fname in all_exes:
+                        if fname.lower().startswith("pbrain"):
+                            if has_pbrain:
+                                exe_list += [fname]
                             else:
-                                if not has_pbrain:
-                                    exe_list += [fname]
+                                exe_list = [fname]
+                                has_pbrain = True
+                        else:
+                            if not has_pbrain:
+                                exe_list += [fname]
 
-                    if len(exe_list) > 1:
+                    # Map target rule and size
+                    if rule & 4:
+                        target_rule = "renju"
+                    elif rule & 8:
+                        target_rule = "caro"
+                    elif rule & 1:
+                        target_rule = "standard"
+                    else:
+                        target_rule = "freestyle"
+                    target_size = str(board_size)
+
+                    valid_rules = ["freestyle", "standard", "renju", "caro"]
+                    valid_sizes = ["15", "20"]
+
+                    def get_file_rule_size(fname):
+                        base = os.path.splitext(fname)[0].lower()
+                        # Strip 64-bit suffix if present at the end
+                        if base.endswith("_64"):
+                            base = base[:-3]
+                        elif base.endswith("-64"):
+                            base = base[:-3]
+                        elif base.endswith("64"):
+                            base = base[:-2]
+
+                        # Check _{rule}-{size}
+                        for r in valid_rules:
+                            for s in valid_sizes:
+                                suffix = f"_{r}-{s}"
+                                if base.endswith(suffix):
+                                    return r, s
+                        # Check _{rule}
+                        for r in valid_rules:
+                            suffix = f"_{r}"
+                            if base.endswith(suffix):
+                                return r, None
+                        # Check _{size}
+                        for s in valid_sizes:
+                            suffix = f"_{s}"
+                            if base.endswith(suffix):
+                                return None, s
+                        return None, None
+
+                    def score_candidate(fname):
+                        file_rule, file_size = get_file_rule_size(fname)
+                        if file_rule is not None and file_rule != target_rule:
+                            compat = 0
+                        elif file_size is not None and file_size != target_size:
+                            compat = 0
+                        else:
+                            if file_rule == target_rule and file_size == target_size:
+                                compat = 4
+                            elif file_rule == target_rule:
+                                compat = 3
+                            elif file_size == target_size:
+                                compat = 2
+                            else:
+                                compat = 1
+                        arch_match = (self.is_os_64bit and "64" in fname) or (
+                            not self.is_os_64bit and "64" not in fname
+                        )
+                        return compat, arch_match
+
+                    candidates_with_scores = []
+                    for fname in exe_list:
+                        score = score_candidate(fname)
+                        candidates_with_scores.append((score, fname))
+
+                    # If the maximum compatibility is 0, fall back to treating them all as generic (compat = 1)
+                    max_compat = max(score[0] for score, fname in candidates_with_scores)
+                    if max_compat == 0:
+                        candidates_with_scores = []
                         for fname in exe_list:
-                            if (self.is_os_64bit and "64" in fname) or (
+                            arch_match = (self.is_os_64bit and "64" in fname) or (
                                 not self.is_os_64bit and "64" not in fname
-                            ):
-                                cmd = os.path.join(self.match_dir, md5, fname).replace(
-                                    "\\", "/"
-                                )
-                                protocol = (
-                                    "new"
-                                    if fname.lower().startswith("pbrain")
-                                    else "old"
-                                )
-                                return cmd, protocol
-                    fname = exe_list[0]
+                            )
+                            candidates_with_scores.append(((1, arch_match), fname))
+
+                    # Sort by score: compatibility_score (descending), arch_match (descending)
+                    candidates_with_scores.sort(key=lambda x: (x[0][0], x[0][1]), reverse=True)
+                    fname = candidates_with_scores[0][1]
+
                     cmd = os.path.join(self.match_dir, md5, fname).replace("\\", "/")
                     protocol = "new" if fname.lower().startswith("pbrain") else "old"
                     return cmd, protocol
