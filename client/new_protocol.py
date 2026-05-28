@@ -33,7 +33,7 @@ class new_protocol(object):
         self.working_dir = working_dir
         self.tolerance = tolerance
         self.timeused = 0
-        self.endl = "\n"
+        self.endl = "\r\n"
 
         self.vms_memory = 0
 
