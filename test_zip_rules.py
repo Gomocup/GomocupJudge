@@ -241,9 +241,9 @@ def run_rule_check(selected_exe, protocol, rule, board_size, timeout_turn, timeo
             passed = (x, y) in allowed
             expected_desc = "g8 or l8"
         elif rule_type == "standard_specific":
-            allowed = [(5, 8), (9, 8)]  # f9, j9
+            allowed = [(5, 7), (9, 7)]  # f8, j8
             passed = (x, y) in allowed
-            expected_desc = "f9 or j9"
+            expected_desc = "f8 or j8"
         elif rule_type == "renju_specific":
             forbidden = (6, 8)  # g9
             passed = (x, y) != forbidden
