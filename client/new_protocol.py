@@ -75,23 +75,7 @@ class new_protocol(object):
         self.write_to_process("INFO game_type " + str(self.game_type) + self.endl)
         self.write_to_process("INFO rule " + str(self.rule) + self.endl)
         self.write_to_process("INFO folder " + str(self.folder) + self.endl)
-        # Wait for the OK/ERROR response from START command before suspending
-        start_time = time.time()
-        response = ""
-        while time.time() - start_time < 5.0:
-            try:
-                line = self.queue.get_nowait()
-                if line.lower().startswith("ok") or line.lower().startswith("error"):
-                    response = line.strip()
-                    break
-            except Empty:
-                time.sleep(0.01)
-        if response.lower().startswith("error"):
-            try:
-                self.process.kill()
-            except:
-                pass
-            raise RuntimeError(response)
+
         self.suspend()
 
     def init_board(self, board):
