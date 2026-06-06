@@ -268,6 +268,11 @@ def run_rule_check(selected_exe, protocol, rule, board_size, timeout_turn, timeo
 def main():
     parser = argparse.ArgumentParser(description="Gomocup Engine ZIP Rule Tester")
     parser.add_argument("zip_paths", nargs="+", help="Path to the engine .zip file(s) to test")
+    parser.add_argument(
+        "--only-rule",
+        action="store_true",
+        help="Only test rule checks (basic positions), skip self-play matches",
+    )
     args = parser.parse_args()
 
     zip_paths = [os.path.abspath(p) for p in args.zip_paths]
@@ -413,6 +418,10 @@ def main():
                     continue
 
                 # 2. Self-play match
+                if args.only_rule:
+                    results[name] = (True, "Rule checks passed")
+                    continue
+
                 print("Running self-play game...")
                 sp_passed, sp_msg = run_self_play(
                     exe_path, protocol, rule, board_size, timeout_turn, timeout_match, temp_dir
