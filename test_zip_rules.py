@@ -346,7 +346,7 @@ def main():
         },
         {
             "name": "Caro",
-            "rule": 8,
+            "rule": 9,
             "board_size": 15,
             "timeout_turn": 30000,
             "timeout_match": 180000,
