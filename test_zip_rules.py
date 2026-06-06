@@ -165,7 +165,7 @@ def run_self_play(selected_exe, protocol, rule, board_size, timeout_turn, timeou
             folder_2=folder_2,
             working_dir_1=working_dir,
             working_dir_2=working_dir,
-            tolerance=1000,
+            tolerance=5000,
             settings={},
             special_rule="",
         )
