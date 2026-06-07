@@ -718,17 +718,31 @@ class Tournament:
             fin = open(state_path, "r")
         except:
             return
+        # Read all existing state lines into a dict keyed by group_id.
+        # This allows new engines appended to the tournament config to be
+        # handled gracefully: their matches simply won't be found in the
+        # dict and will remain in the default unplayed state.
+        state_dict = {}
+        for line in fin:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                group_id = eval(line.split("\t")[0])
+                state_dict[group_id] = line
+            except Exception:
+                pass
+        fin.close()
         leftmatches = 0
         for match in self.matches:
-            readstr = fin.readline()
-            if readstr:
-                match.read_string(readstr.strip())
-                if match.result == None:
+            if match.group_id in state_dict:
+                match.read_string(state_dict[match.group_id])
+                if match.result is None:
                     leftmatches += 1
             else:
-                break
+                # Match not present in saved state (e.g. newly added engine).
+                leftmatches += 1
         self.leftmatches = leftmatches
-        fin.close()
         self.restore_result()
 
     def restore_result(self):
